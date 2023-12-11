@@ -84,18 +84,19 @@ def model_summary(model, sample_input):
     df = pd.DataFrame(layers_info, columns=columns)
     return df, columns, total_params
 
-def save_model(valid_loss, best_valid_loss, model_dict, model_name, save_dir):
+def save_model(valid_metric, best_valid_metric, model_dict, model_name, save_dir, metric_name, mode= 'max'):
     
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
-
-    if valid_loss<best_valid_loss:
-        print(f'{BOLD}{GREEN}Validation loss has decreased from:  {best_valid_loss:.4f} to: {valid_loss:.4f}{RESET}')
-        best_valid_loss = valid_loss
-        save_file_path = os.path.join(save_dir, f'{model_name}_loss.pth')
-        torch.save(model_dict, save_file_path)
+    mode_dict = {'max' :  'increase', 'min' : 'decrease'}
+    if mode == 'max':
+        if valid_metric>best_valid_metric:
+            print(f'{BOLD}{GREEN}Validation {metric_name} has {model_dict[mode]}d from:  {best_valid_metric:.4f} to: {valid_metric:.4f}{RESET}')
+            best_valid_metric = valid_metric
+            save_file_path = os.path.join(save_dir, f'{model_name}_{metric_name}.pth')
+            torch.save(model_dict, save_file_path)
     
-    return best_valid_loss, model_dict 
+    return best_valid_metric, model_dict 
 
 def visualizer(predictions, outputs, labels, idx, metric_scores_batch):
     data = predictions[idx].detach().cpu().numpy()

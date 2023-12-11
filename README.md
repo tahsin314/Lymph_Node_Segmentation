@@ -40,6 +40,12 @@ This section describes the integrated models in this pipeline:
 
 *WIP*
 
+## Features
+
+- **`Probability Correction Strategy`** : Probability Correction Strategy (PCS) is a method to improve the segmentation of small polyps, which are often underrepresented and have low confidence in the model predictions. PCS works by normalizing the logits (pre-activation values) of the positive and negative samples according to their proportions in the image. This way, the effect of sample imbalance is reduced and the predictions are more accurate. PCS is applied only during inference, so it does not affect the training process or introduce extra computation cost.
+  - Paper: [Wei et al, 2021][sam]
+  - Code: [SANet][sam_code]
+  
 ## TODO
 
 - I'm planning on reporting separate Metric Performance for very small nodules, relatively small, and small nodules to demonstrate the model's effectiveness in prediction. I might tweak the loss functions based on nodule size.
@@ -54,6 +60,10 @@ This section describes the integrated models in this pipeline:
 
 - Tuning parameters has been a major issue in my experiments. I am thinking of parameter sweeping through methods like Random Search, Grid Search, Brute force search, etc., to find the best set of parameters. I'm looking into using `Optuna`, a Python-based library designed for this task.
 
+- Some lymph nodes appear to be predicted at a slightly different distance compared to the original ones. However, this discrepancy causes a significant drop in performance metrics, despite the visual closeness to the actual output. Perhaps we can devise a metric capable of discerning if a predicted node is in close proximity to the original one, thereby yielding a favorable score.
+
+- Currently, I'm trying to maximize the recall score by reducing the probability threshold. This in fact, increases false positive cases and thus reduces dice scores. We need to figure out a way to reduce the false positive predictions.
+
 [unet]: https://arxiv.org/abs/1505.04597
 [unet_code]: https://github.com/milesial/Pytorch-UNet
 [ssformer]: https://arxiv.org/pdf/2203.03635.pdf
@@ -62,3 +72,5 @@ This section describes the integrated models in this pipeline:
 [caranet_code]: https://github.com/AngeLouCN/CaraNet
 [fcbformer]: https://arxiv.org/pdf/2208.08352.pdf
 [fcbformer_code]: https://github.com/ESandML/FCBFormer
+[sam]: https://arxiv.org/pdf/2108.00882.pdf
+[sam_code]: https://github.com/weijun88/SANet

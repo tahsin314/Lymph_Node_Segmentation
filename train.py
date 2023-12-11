@@ -84,24 +84,26 @@ plist = [
         # {'params': model.head.parameters(),  'lr': lr}
     ]
 optim = Adam(plist, lr=lr)
-lr_scheduler = ReduceLROnPlateau(optim, mode='min', patience=5, factor=0.5, min_lr=1e-6, verbose=True)
+lr_scheduler = ReduceLROnPlateau(optim, mode='max', patience=5, factor=0.5, min_lr=1e-6, verbose=True)
 cyclic_scheduler = CosineAnnealingWarmRestarts(optim, 5*len(data_module.train_dataloader()), 2, lr/20, -1)
 wandb.watch(models=model, criterion=citerion, log='parameters')
 
 if pretrained:
     best_state = torch.load(f"model_dir/{model_name}_loss.pth")
     print(f"Best Validation result was found in epoch {best_state['epoch']}\n")
-    print(f"Best Validation Loss {best_state['best_loss']}\n")
+    print(f"Best Validation Recall {best_state['best_recall']}\n")
     print("Loading best model")
     prev_epoch_num = best_state['epoch']
     best_valid_loss = best_state['best_loss']
+    best_valid_recall = best_state['best_recall']
     model.load_state_dict(best_state['model'])
     optim.load_state_dict(best_state['optim'])
     lr_scheduler.load_state_dict(best_state['scheduler'])
-    # cyclic_scheduler.load_state_dict(best_state['cyclic_scheduler'])
+    cyclic_scheduler.load_state_dict(best_state['cyclic_scheduler'])
 else:
     prev_epoch_num = 0
     best_valid_loss = np.inf
+    best_valid_recall = 0.0
     best_state = None
 
 early_stop_counter = 0
@@ -138,7 +140,7 @@ for epoch in range(prev_epoch_num, n_epochs):
         valid_losses.append(valid_loss)
     
     # lr_scheduler.step(valid_loss)
-    lr_scheduler.step(valid_loss)
+    lr_scheduler.step(np.mean(val_recall_scores))
     wandb.log({"Train Average DICE": np.mean(train_dice_scores), "Train SD DICE": np.std(train_dice_scores), "Epoch": epoch})
     wandb.log({"Validation Average DICE": np.mean(val_dice_scores), "Validation SD DICE": np.std(val_dice_scores),"Epoch": epoch})
     wandb.log({"Train Average Recall": np.mean(train_recall_scores), "Train SD DICE": np.std(train_recall_scores), "Epoch": epoch})
@@ -153,28 +155,29 @@ for epoch in range(prev_epoch_num, n_epochs):
     'cyclic_scheduler':cyclic_scheduler.state_dict(), 
     # 'scaler': scaler.state_dict(),
     'best_loss':valid_loss, 
+    'best_recall':np.mean(val_recall_scores),
     'epoch':epoch}
-    if valid_loss > best_valid_loss:
+    if np.mean(val_recall_scores) < best_valid_recall:
         early_stop_counter += 1
         if early_stop_counter == 30:
-            print(f"{RED}No improvement over val loss for so long!{RESET}")
+            print(f"{RED}No improvement over val recall for so long!{RESET}")
             print(f"{RED}Early Stopping now!{RESET}")
             break
     else: early_stop_counter = 0
 
-    best_valid_loss, best_state = save_model(valid_loss, 
-                best_valid_loss, model_dict, 
-                model_name, 'model_dir')
+    best_valid_recall, best_state = save_model(np.mean(val_recall_scores), 
+                best_valid_recall, model_dict, 
+                model_name, 'model_dir', 'recall', 'max')
     
     print(ITALIC+"="*70+RESET)
     
-best_state = torch.load(f"model_dir/{model_name}_loss.pth")
+best_state = torch.load(f"model_dir/{model_name}_recall.pth")
 model.load_state_dict(best_state['model'])
 optim.load_state_dict(best_state['optim'])
 lr_scheduler.load_state_dict(best_state['scheduler'])
 # cyclic_scheduler.load_state_dict(best_state['cyclic_scheduler'])
 print(f"{BLUE}Best Validation result was found in epoch {best_state['epoch']}\n{RESET}")
-print(f"{BLUE}Best Validation Loss {best_state['best_loss']}\n{RESET}")
+print(f"{BLUE}Best Validation Recall {best_state['best_recall']}\n{RESET}")
 test_loss, test_dice_scores, test_recall_scores, _ = train_val_class(epoch, data_module.test_dataloader(), 
                                             model, citerion, optim, cyclic_scheduler, mixed_precision=mixed_precision, device_ids=device_ids, train=False)
 wandb.log({"Test Loss": test_loss, "Test Average DICE": np.mean(test_dice_scores), "Test SD DICE": np.std(test_dice_scores), "Test Average Recall": np.mean(test_recall_scores), "Test SD Recall": np.std(test_recall_scores)})

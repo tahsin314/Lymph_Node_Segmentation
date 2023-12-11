@@ -16,7 +16,7 @@ config_params = dict(
     fold = 1,
     sz = 512,
     num_channels = 1,
-    threshold = 0.3,
+    threshold = 0.25,
     dataset = 'LN Segmentation',
     lr = 1.5e-4,
     eps = 1e-5,
@@ -26,7 +26,7 @@ config_params = dict(
     gradient_accumulation_steps = 1,
     SEED = 2023,
     sampling_mode = None, #upsampling
-    pretrained = False,
+    pretrained = True,
     mixed_precision = False
     )
 
