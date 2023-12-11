@@ -91,7 +91,7 @@ def save_model(valid_metric, best_valid_metric, model_dict, model_name, save_dir
     mode_dict = {'max' :  'increase', 'min' : 'decrease'}
     if mode == 'max':
         if valid_metric>best_valid_metric:
-            print(f'{BOLD}{GREEN}Validation {metric_name} has {model_dict[mode]}d from:  {best_valid_metric:.4f} to: {valid_metric:.4f}{RESET}')
+            print(f'{BOLD}{GREEN}Validation {metric_name} has {mode_dict[mode]}d from:  {best_valid_metric:.4f} to: {valid_metric:.4f}{RESET}')
             best_valid_metric = valid_metric
             save_file_path = os.path.join(save_dir, f'{model_name}_{metric_name}.pth')
             torch.save(model_dict, save_file_path)

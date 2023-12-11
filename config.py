@@ -11,7 +11,7 @@ import albumentations as A
 config_params = dict(
     data_dir = "../DATA/lymph_node/ct_221_npz", #"../DATA/Clouds/38-Cloud_training"
     model_dir = 'model_dir',
-    model_name = 'ssformer_S',
+    model_name = 'ssformer_L',
     n_fold = 5,
     fold = 1,
     sz = 512,
@@ -22,11 +22,11 @@ config_params = dict(
     eps = 1e-5,
     weight_decay = 1e-5,
     n_epochs = 60,
-    bs = 20,
-    gradient_accumulation_steps = 1,
+    bs = 16,
+    gradient_accumulation_steps = 2,
     SEED = 2023,
     sampling_mode = None, #upsampling
-    pretrained = True,
+    pretrained = False,
     mixed_precision = False
     )
 
