@@ -30,8 +30,8 @@ def dice_score_by_data_torch(target, pred, threshold=0.5, smooth = 1e-6):
     thr_pcs = np.log(1/threshold - 1 + smooth)
     num = pred.size(0)
     # Probability Correction Strategy --> Shallow Attention Network for Polyp Segmentation
-    pred[torch.where(pred>0)] /= (pred > thr_pcs).float().mean()
-    pred[torch.where(pred<0)] /= (pred < thr_pcs).float().mean()
+    pred[torch.where(pred > thr_pcs)] /= (pred > thr_pcs).float().mean()
+    pred[torch.where(pred < thr_pcs)] /= (pred < thr_pcs).float().mean()
     pred = pred.sigmoid()
     if threshold is not None:
         pred = (pred > threshold).float() 
@@ -47,8 +47,8 @@ def recall(y_true, y_pred, threshold=0.5, smooth=1e-6):
     thr_pcs = np.log(1/threshold - 1 + smooth)
     num = y_pred.size(0)
     # Probability Correction Strategy --> Shallow Attention Network for Polyp Segmentation
-    y_pred[torch.where(y_pred>0)] /= (y_pred > thr_pcs).float().mean()
-    y_pred[torch.where(y_pred<0)] /= (y_pred < thr_pcs).float().mean()
+    y_pred[torch.where(y_pred > thr_pcs)] /= (y_pred > thr_pcs).float().mean()
+    y_pred[torch.where(y_pred < thr_pcs)] /= (y_pred < thr_pcs).float().mean()
     y_pred = y_pred.sigmoid()
     if threshold is not None:
         y_pred = (y_pred > threshold).float()
