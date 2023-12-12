@@ -45,6 +45,10 @@ This section describes the integrated models in this pipeline:
 - **`Probability Correction Strategy`** : Probability Correction Strategy (PCS) is a method to improve the segmentation of small polyps, which are often underrepresented and have low confidence in the model predictions. PCS works by normalizing the logits (pre-activation values) of the positive and negative samples according to their proportions in the image. This way, the effect of sample imbalance is reduced and the predictions are more accurate. PCS is applied only during inference, so it does not affect the training process or introduce extra computation cost.
   - Paper: [Wei et al, 2021][sam]
   - Code: [SANet][sam_code]
+
+## Resources
+
+- This [list][segmentation_etis] contains a list of models benchmarked with high scores on several standard medical segmentation datasets.
   
 ## TODO
 
@@ -74,3 +78,4 @@ This section describes the integrated models in this pipeline:
 [fcbformer_code]: https://github.com/ESandML/FCBFormer
 [sam]: https://arxiv.org/pdf/2108.00882.pdf
 [sam_code]: https://github.com/weijun88/SANet
+[segmentation_etis]: [https://paperswithcode.com/sota/medical-image-segmentation-on-etis]
