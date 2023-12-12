@@ -78,4 +78,4 @@ This section describes the integrated models in this pipeline:
 [fcbformer_code]: https://github.com/ESandML/FCBFormer
 [sam]: https://arxiv.org/pdf/2108.00882.pdf
 [sam_code]: https://github.com/weijun88/SANet
-[segmentation_etis]: [https://paperswithcode.com/sota/medical-image-segmentation-on-etis]
+[segmentation_etis]: https://paperswithcode.com/sota/medical-image-segmentation-on-etis
