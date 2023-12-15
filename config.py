@@ -3,6 +3,7 @@ from models.unet import U_Net
 from models.mit.mit_PLD_b2 import mit_PLD_b2
 from models.CaraNet.caranet import caranet
 from models.FCBFormer.FCBFormer import FCBFormer
+from models.DUCKNet.DUCKNet import DuckNet
 import cv2
 import albumentations as A
 
@@ -11,7 +12,7 @@ import albumentations as A
 config_params = dict(
     data_dir = "../DATA/lymph_node/ct_221_npz", #"../DATA/Clouds/38-Cloud_training"
     model_dir = 'model_dir',
-    model_name = 'ssformer_L',
+    model_name = 'DUCKNet',
     n_fold = 5,
     fold = 1,
     sz = 512,
@@ -22,7 +23,7 @@ config_params = dict(
     eps = 1e-5,
     weight_decay = 1e-5,
     n_epochs = 60,
-    bs = 16,
+    bs = 24,
     gradient_accumulation_steps = 2,
     SEED = 2023,
     sampling_mode = None, #upsampling
@@ -36,8 +37,8 @@ model_params = dict(
     ssformer_S = mit_PLD_b2(class_num=1, in_chans=config_params['num_channels']),
     ssformer_L = mit_PLD_b4(class_num=1),
     CaraNet = caranet(in_chans=config_params['num_channels']),
-    FCBFormer = FCBFormer(size=config_params['sz'])
-    # Efficientnet = EfficientNet(config_params['model_name'], 1)
+    FCBFormer = FCBFormer(size=config_params['sz']),
+    DUCKNet = DuckNet(in_chans=config_params['num_channels'], starting_filters=10)
     )
 
 aug_config = dict(
