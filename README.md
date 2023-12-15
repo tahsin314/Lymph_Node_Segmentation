@@ -34,6 +34,12 @@ This section describes the integrated models in this pipeline:
   - Paper: [Sanderson et al, 2022][fcbformer]
   - Code: [FCBFormer][fcbformer_code]
 
+- **`DUCKNet`** : They proposed a custom convolutional block, *DUCK*, that combines different types of convolutions to capture features at multiple scales and resolutions. They also use a residual downsampling mechanism to preserve the original image information at each encoder level. Their main contributions are:
+the DUCK block, which allows more in-depth feature selection and accurate polyp border prediction and the residual downsampling, which enables the use of the initial image information at each resolution level in the encoder segment.
+
+  - Paper: [Dumitru et al, 2023][duck]
+  - Code: [DUCK-Net][duck_code]
+
 - **`LiVS`** : *WIP*
 
 ## Loss Functions
@@ -79,3 +85,5 @@ This section describes the integrated models in this pipeline:
 [sam]: https://arxiv.org/pdf/2108.00882.pdf
 [sam_code]: https://github.com/weijun88/SANet
 [segmentation_etis]: https://paperswithcode.com/sota/medical-image-segmentation-on-etis
+[duck]: https://arxiv.org/ftp/arxiv/papers/2311/2311.02239.pdf
+[duck_code]: https://github.com/RazvanDu/DUCK-Net
