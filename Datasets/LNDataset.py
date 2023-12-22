@@ -27,10 +27,11 @@ class LNDataset(Dataset):
 
     def __getitem__(self, idx):
         image_id = self.image_ids[idx]
-        image_id = image_id.replace('ct_221_8bit', 'ct_221_npz')
+        image_id = image_id.replace('ct_221_8bit', 'ct_221_2_npz')
         # image = cv2.imread(image_id)
         image = np.load(image_id.replace('png', 'npz'), allow_pickle=True)['arr_0']
         image = cv2.resize(image, (self.dim, self.dim))
+        num_chans = image.shape[-1]
         # image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)     
         
         mask = np.load(image_id.replace('/images/', '/masks/').replace('png', 'npz'), allow_pickle=True)['arr_0']
@@ -39,7 +40,7 @@ class LNDataset(Dataset):
         if self.transforms is not None:
             image, mask = self.transforms.generation(image, mask)
         else:
-            image = image.reshape(self.dim, self.dim, 1).transpose(2, 0, 1)
+            image = image.reshape(self.dim, self.dim, num_chans).transpose(2, 0, 1)
             mask = mask.reshape(self.dim, self.dim)
             mask = (mask > 0.5).astype(np.uint8)
             one_hot_mask = np.zeros((2, self.dim, self.dim), dtype=np.uint8)

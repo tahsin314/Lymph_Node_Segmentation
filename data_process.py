@@ -8,13 +8,15 @@ import cv2
 import nrrd
 import pandas as pd
 # from p_tqdm import p_map
+num_slices = 2
 data_dir = "../DATA/lymph_node/ct_221"
-new_data_dir = "../DATA/lymph_node/ct_221_npz"
+new_data_dir = f"../DATA/lymph_node/ct_221_{num_slices}_npz"
 label_dict = {'patient_id':[], 'slice_num':[], 'label':[]}
 patient_ids = os.listdir(data_dir)
 
 # for pat_id in T(patient_ids):
-def data_processing(pat_id):
+def data_processing(args):
+    pat_id, num_slices = args
     pat_id = str(pat_id)
     try:
         data_file = [f for f in os.listdir(os.path.join(data_dir, pat_id))if 'IM00' in f][0]
@@ -24,27 +26,32 @@ def data_processing(pat_id):
 
     img_pat_id = nrrd.read(os.path.join(data_dir, pat_id, data_file))[0]
     mask_pat_id = nrrd.read(os.path.join(data_dir, pat_id, seg_file))[0]
+    H, W, D = img_pat_id.shape
+    padded_data = np.pad(img_pat_id, ((0, 0), (0, 0), (num_slices, num_slices)), mode='constant')
+    # print(img_pat_id.shape, padded_data.shape,)
     os.makedirs(os.path.join(new_data_dir, pat_id, 'images'), exist_ok=True)
     os.makedirs(os.path.join(new_data_dir, pat_id, 'masks'), exist_ok=True)
-    for i in range(img_pat_id.shape[-1]):
-        img = window_image(img_pat_id[:,:,i], 40, 400, 0, 1)
-        mask = mask_pat_id[:, :, i]
+    for i in range(num_slices, padded_data.shape[-1] - num_slices):
+        img = window_image(padded_data[:,:,i-num_slices:i+num_slices+1], 40, 400, 0, 1)
+        # print(i, img.shape)
+        mask = mask_pat_id[:, :, i - num_slices]
         mask[mask>0] = 255
         label_dict['patient_id'].append(pat_id)
         label_dict['slice_num'].append(i)
         if np.sum(mask) == 0:
             label_dict['label'].append(0)
         else: label_dict['label'].append(1)
-        np.savez(os.path.join(new_data_dir, pat_id, f'images/{i}'), img)
-        np.savez(os.path.join(new_data_dir, pat_id, f'masks/{i}'), mask)
+        np.savez(os.path.join(new_data_dir, pat_id, f'images/{i-num_slices}'), img)
+        np.savez(os.path.join(new_data_dir, pat_id, f'masks/{i-num_slices}'), mask)
         # cv2.imwrite(os.path.join(new_data_dir, pat_id, f'images/{i}.png'), img)
         # cv2.imwrite(os.path.join(new_data_dir, pat_id, f'masks/{i}.png'), mask)
 
 def datapath(patient_id, slice_num):return f"{patient_id}/images/{slice_num}.npz"
 
 if __name__ == '__main__':
+    args_list = [(patient_id, num_slices) for patient_id in patient_ids]
     with Pool(16) as p:
-        list(T(p.imap(data_processing, patient_ids), total=len(patient_ids), colour='red'))
+        list(T(p.imap(data_processing, args_list), total=len(patient_ids), colour='red'))
     df = pd.DataFrame(label_dict)
     df.to_csv(f"{new_data_dir}/labels.csv", index=False)
     gkf = GroupKFold(n_splits=5)

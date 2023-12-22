@@ -74,9 +74,9 @@ def train_val_class(epoch, dataloader, model, criterion, optimizer, cyclic_sched
             average_recall = np.mean(recall_score_batch)
             closest_to_average_index = np.argmin(np.abs(recall_score_batch - average_recall))
             if not train:
-                row1 = visualizer(data, outputs, labels, min_recall_index, recall_score_batch)
-                row2 = visualizer(data, outputs, labels, closest_to_average_index, recall_score_batch)
-                row3 = visualizer(data, outputs, labels, max_recall_index, recall_score_batch)
+                row1 = visualizer(data[:, num_slices, :, :], outputs, labels, min_recall_index, recall_score_batch)
+                row2 = visualizer(data[:, num_slices, :, :], outputs, labels, closest_to_average_index, recall_score_batch)
+                row3 = visualizer(data[:, num_slices, :, :], outputs, labels, max_recall_index, recall_score_batch)
                 final_image = np.vstack([row1, row2, row3])
                 # print(final_image.shape, row1.shape)
                 wandb.log({f"image_batch {idx}": wandb.Image(final_image)})

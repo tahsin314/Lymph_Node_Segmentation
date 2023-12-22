@@ -10,20 +10,20 @@ import albumentations as A
 
 ''' You only need to change the config_parmas dictionary'''
 config_params = dict(
-    data_dir = "../DATA/lymph_node/ct_221_npz", #"../DATA/Clouds/38-Cloud_training"
+    data_dir = "../DATA/lymph_node/ct_221_2_npz", #"../DATA/Clouds/38-Cloud_training"
     model_dir = 'model_dir',
-    model_name = 'DUCKNet',
+    model_name = 'ssformer_L',
     n_fold = 5,
     fold = 1,
     sz = 512,
-    num_channels = 1,
+    num_slices = 2,
     threshold = 0.25,
     dataset = 'LN Segmentation',
-    lr = 1.5e-4,
+    lr = 1e-4,
     eps = 1e-5,
     weight_decay = 1e-5,
-    n_epochs = 60,
-    bs = 24,
+    n_epochs = 80,
+    bs = 16,
     gradient_accumulation_steps = 2,
     SEED = 2023,
     sampling_mode = None, #upsampling
@@ -33,12 +33,12 @@ config_params = dict(
 
 model_params = dict(
 
-    UNet = U_Net(config_params['num_channels'], 1),
-    ssformer_S = mit_PLD_b2(class_num=1, in_chans=config_params['num_channels']),
-    ssformer_L = mit_PLD_b4(class_num=1),
-    CaraNet = caranet(in_chans=config_params['num_channels']),
+    UNet = U_Net(2*config_params['num_slices'] + 1, 1),
+    ssformer_S = mit_PLD_b2(class_num=1, in_chans=2*config_params['num_slices'] + 1),
+    ssformer_L = mit_PLD_b4(class_num=1, in_chans=2*config_params['num_slices'] + 1),
+    CaraNet = caranet(in_chans=2*config_params['num_slices'] + 1),
     FCBFormer = FCBFormer(size=config_params['sz']),
-    DUCKNet = DuckNet(in_chans=config_params['num_channels'], starting_filters=10)
+    DUCKNet = DuckNet(in_chans=2*config_params['num_slices'] + 1, starting_filters=11)
     )
 
 aug_config = dict(
