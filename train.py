@@ -17,7 +17,10 @@ import wandb
 from Datasets.CloudDataset import CloudDataset
 from Datasets.DataModule import DataModule
 
-from config import config_params, model_params, aug_config, color_config
+from config.config import config_params
+from config.model_config import model_params
+from config.augment_config import aug_config
+from config.color_config import color_config
 from Datasets.LNDataset import LNDataset
 from train_module import train_val_class
 from utils import save_model, seed_everything

@@ -1,6 +1,6 @@
 from multiprocessing import Pool
 from sklearn.model_selection import GroupKFold, StratifiedKFold
-from config import *
+from config.config import *
 from utils import *
 from tqdm import tqdm as T
 import numpy as np
@@ -26,14 +26,11 @@ def data_processing(args):
 
     img_pat_id = nrrd.read(os.path.join(data_dir, pat_id, data_file))[0]
     mask_pat_id = nrrd.read(os.path.join(data_dir, pat_id, seg_file))[0]
-    H, W, D = img_pat_id.shape
     padded_data = np.pad(img_pat_id, ((0, 0), (0, 0), (num_slices, num_slices)), mode='constant')
-    # print(img_pat_id.shape, padded_data.shape,)
     os.makedirs(os.path.join(new_data_dir, pat_id, 'images'), exist_ok=True)
     os.makedirs(os.path.join(new_data_dir, pat_id, 'masks'), exist_ok=True)
     for i in range(num_slices, padded_data.shape[-1] - num_slices):
         img = window_image(padded_data[:,:,i-num_slices:i+num_slices+1], 40, 400, 0, 1)
-        # print(i, img.shape)
         mask = mask_pat_id[:, :, i - num_slices]
         mask[mask>0] = 255
         label_dict['patient_id'].append(pat_id)

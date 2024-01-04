@@ -4,7 +4,8 @@ import numpy as np
 import torch
 import wandb
 
-from config import color_config, config_params
+from config.config import config_params
+from config.color_config import color_config
 from utils import clip_gradient, visualizer
 
 from metric import dice_score_by_data_torch, recall

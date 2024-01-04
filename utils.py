@@ -3,7 +3,7 @@ import os
 from sklearn import metrics
 from sklearn.model_selection import StratifiedGroupKFold, train_test_split
 import wandb
-from config import *
+from config.config import *
 import random
 import numpy as np
 from sklearn.metrics import confusion_matrix, classification_report, precision_recall_fscore_support
@@ -18,7 +18,7 @@ import seaborn as sns
 from tqdm import tqdm as T
 import pandas as pd
 from torch import nn
-from config import color_config
+from config.color_config import color_config
 # from gradcam.gradcam import GradCAM, GradCAMpp
 
 for key, value in color_config.items():
