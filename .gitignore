@@ -5,3 +5,4 @@ random_masks
 __pycache__
 wandb
 *.pyc
+data/*

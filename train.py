@@ -82,6 +82,7 @@ model.to(f'cuda:{device_ids[0]}', non_blocking=True)
 
 # citerion = BinaryDiceLoss(reduction='mean')
 citerion = structure_loss
+
 plist = [ 
         {'params': model.parameters(),  'lr': lr},
         # {'params': model.head.parameters(),  'lr': lr}
@@ -122,6 +123,7 @@ for epoch in range(prev_epoch_num, n_epochs):
 
     train_loss, train_dice_scores, train_recall_scores, cyclic_scheduler = train_val_class(epoch, data_module.train_dataloader(), 
                                             model, citerion, optim, cyclic_scheduler, mixed_precision=mixed_precision, device_ids=device_ids, train=True)
+    
     valid_loss, val_dice_scores, val_recall_scores, _ = train_val_class(epoch, data_module.val_dataloader(), 
                                             model, citerion, optim, cyclic_scheduler, mixed_precision=mixed_precision, device_ids=device_ids, train=False)
     # NaN check
