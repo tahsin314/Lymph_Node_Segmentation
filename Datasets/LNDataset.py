@@ -15,42 +15,74 @@ from torchvision import transforms,models
 from tqdm import tqdm_notebook as tqdm
 import platform
 import warnings
+import random
 warnings.filterwarnings('ignore')
 
 class LNDataset(Dataset):
-    def __init__(self, image_ids, labels=None, dim=256, transforms=None):
+    def __init__(self, image_ids, labels=None, dim=384, transforms=None):
         super().__init__()
         self.image_ids = image_ids
         self.labels = labels
         self.dim = dim
         self.transforms = transforms
 
+        self.transform_val = A.Compose(
+            [
+                A.CenterCrop (height = dim, width = dim)
+            ],
+            additional_targets = {'image0':'image', 'image1':'image'}
+        )
+        if self.transforms is not None:
+            random.shuffle(self.image_ids)
+
+    def convert_to_tensor(self, img):
+        img = np.expand_dims(img, axis=2)
+        img_torch = torch.from_numpy(img)
+        img_torch = img_torch.type(torch.FloatTensor)
+        img_torch = img_torch.permute(-1, 0, 1)
+        return img_torch
+
+    def onehot(self, num_class, target):
+        vec = torch.zeros(num_class, dtype=torch.float32)
+        vec[target] = 1.
+        return vec
+
     def __getitem__(self, idx):
         image_id = self.image_ids[idx]
-        image_id = image_id.replace('ct_221_8bit', 'ct_221_2_npz')
-        # image = cv2.imread(image_id)
-        image = np.load(image_id.replace('png', 'npz'), allow_pickle=True)['arr_0']
-        image = cv2.resize(image, (self.dim, self.dim))
-        num_chans = image.shape[-1]
-        # image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)     
+        image = np.load(image_id)
+        img_8_bit_path = image_id.replace('/raw_slice/', '/images/').replace('.npy','.jpg')
+        image_8_bit = cv2.imread(img_8_bit_path)
+        num_chans = image_8_bit.shape[-1]   
         
-        mask = np.load(image_id.replace('/images/', '/masks/').replace('png', 'npz'), allow_pickle=True)['arr_0']
-        mask = cv2.resize(mask, (self.dim, self.dim))//255.
-        # mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)//255.     
+        mask = cv2.imread(image_id.replace('/raw_slice/', '/masks/'))
+    
+        image_8_bit = image_8_bit[:,:,0]
+        mask = mask[:,:,0]
+
         if self.transforms is not None:
-            image, mask = self.transforms.generation(image, mask)
+            image, mask, image_8_bit = self.transforms.generation(image, mask, image_8_bit)
+            #print('transformed')
         else:
-            image = image.reshape(self.dim, self.dim, num_chans).transpose(2, 0, 1)
-            mask = mask.reshape(self.dim, self.dim)
-            mask = (mask > 0.5).astype(np.uint8)
-            one_hot_mask = np.zeros((2, self.dim, self.dim), dtype=np.uint8)
-            one_hot_mask[0, :, :] = (mask == 0).astype(np.uint8)
-            one_hot_mask[1, :, :] = (mask == 1).astype(np.uint8)
-            # if np.sum(mask)>0:
-            #     print(np.argmax(one_hot_mask, axis=0).shape)
-            #     cv2.imwrite(f"random_masks/{image_id.split('/')[-1]}", 255*np.argmax(one_hot_mask, axis=0))
-            
-        return image, mask
+            transformed = self.transform_val(image=image, image0=mask, image1=image_8_bit)
+            image, mask, image_8_bit = transformed['image'], transformed['image0'], transformed['image1']
+        
+
+        image_8_bit = image_8_bit/255.0
+        mask = mask/255
+        mask = mask.astype('uint8')
+
+        img_tensor = self.convert_to_tensor(image)
+        img_8_bit_tensor = self.convert_to_tensor(image_8_bit)
+        mask_tensor = self.convert_to_tensor(mask)
+
+        mask_value = np.count_nonzero(mask)
+        if mask_value>0:
+            labels = 1
+        else:
+            labels = 0
+        target = self.onehot(self.num_class, labels) 
+
+        return img_tensor, img_8_bit_tensor, mask_tensor, target
 
     def __len__(self):
         return len(self.image_ids)

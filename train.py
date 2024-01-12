@@ -57,14 +57,11 @@ test_df = pd.read_csv(f"{data_dir}/test_labels.csv")
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-train_ds = LNDataset(train_df.path.values, train_df.label.values, dim=sz,
-  transforms=None)
+train_ds = LNDataset(train_df.path.values, train_df.label.values, dim=sz, transforms=None)
 
-valid_ds = LNDataset(valid_df.path.values, valid_df.label.values, dim=sz,
-  transforms=None)
+valid_ds = LNDataset(valid_df.path.values, valid_df.label.values, dim=sz, transforms=None)
 
-test_ds = LNDataset(test_df.path.values, test_df.label.values, dim=sz,
-  transforms=None)
+test_ds = LNDataset(test_df.path.values, test_df.label.values, dim=sz, transforms=None)
 
 # data = CloudDataset(base_path=data_dir)
 # train_ds, valid_ds, test_ds = torch.utils.data.random_split(data, (4000, 2400, 2000))

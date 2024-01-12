@@ -17,7 +17,7 @@ import platform
 import warnings
 warnings.filterwarnings('ignore')
 
-class DataModule():
+class LNDataModule():
     def __init__(self, train_ds, valid_ds, test_ds, 
     batch_size=32, sampler=None, shuffle=True, num_workers=8):
         super().__init__()
