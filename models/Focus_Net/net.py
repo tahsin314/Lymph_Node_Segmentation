@@ -68,11 +68,12 @@ class heatmap_pred(nn.Module):
 
         self.conv4  = nn.Conv2d(in_ch//4, out_ch, 1)
         self.sigmoid = nn.Sigmoid()
+        self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
-        out = self.conv1(F.relu(self.bn1(x)))
-        out = self.conv2(F.relu(self.bn2(out)))
-        out = self.conv3(F.relu(self.bn3(out)))
+        out = self.conv1(self.relu(self.bn1(x)))
+        out = self.conv2(self.relu(self.bn2(out)))
+        out = self.conv3(self.relu(self.bn3(out)))
         out = self.conv4(out)
 
         out = self.sigmoid(out)
@@ -273,6 +274,7 @@ class inconv(nn.Module):
         self.conv1 = nn.Conv2d(in_ch, out_ch, kernel_size=(3,3), padding=(1,1), bias=False)
         self.relu = nn.ReLU(inplace=True)
         self.conv2 = SEBasicBlock(out_ch, out_ch, kernel_size=(3,3), norm=norm)
+    
     def forward(self, x): 
         out = self.relu(self.conv1(x))
         out = self.conv2(out)

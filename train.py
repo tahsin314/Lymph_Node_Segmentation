@@ -10,7 +10,6 @@ import torch
 from torch.nn.parallel import DataParallel
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingWarmRestarts
-# from catalyst.data.sampler import BalanceClassSampler
 from thop import profile
 
 import wandb
@@ -73,15 +72,15 @@ model = model_params[config_params['model_name']]
 # turn_on_efficient_conv_bn_eval_for_single_model(model)
 total_params = sum(p.numel() for p in model.parameters())
 wandb.log({'# Model Params': total_params})
-flops, _ = profile(model, inputs=(torch.randn(1, 2*num_slices+1, sz, sz),))
-wandb.log({'# Model FLOPS': flops})
+# flops, _ = profile(model, inputs=(torch.randn(1, 2*num_slices+1, sz, sz),))
+# wandb.log({'# Model FLOPS': flops})
 # model = model.to(device)
 device_ids = [1, 0, 2, 3]
 model = DataParallel(model, device_ids=device_ids)
 model.to(f'cuda:{device_ids[0]}', non_blocking=True)
 
 # citerion = BinaryDiceLoss(reduction='mean')
-citerion = structure_loss
+citerion = total_structure_loss
 plist = [ 
         {'params': model.parameters(),  'lr': lr},
         # {'params': model.head.parameters(),  'lr': lr}

@@ -35,13 +35,10 @@ def train_val_class(epoch, dataloader, model, criterion, optimizer, cyclic_sched
         with torch.set_grad_enabled(train):
             data = data.to(f'cuda:{device_ids[0]}', non_blocking=True).to(dtype=torch.float32)
             labels = labels.to(f'cuda:{device_ids[0]}', non_blocking=True).to(dtype=torch.long)
-            # print(data.max(), data.min(), labels.max(), labels.min())
-            # print(data.size(), labels.size())
             epoch_samples += len(data)
 
             with torch.cuda.amp.autocast(mixed_precision):
                 outputs = model(data)
-                # print(outputs.max(), outputs.min())
                 loss = criterion(labels, outputs)
                 running_loss += loss.item()*len(data)
 
