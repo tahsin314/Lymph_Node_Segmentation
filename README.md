@@ -66,7 +66,7 @@ the DUCK block, which allows more in-depth feature selection and accurate polyp 
 
 - I use a threshold of `0.5` to differentiate the foreground and the background. I will experiment with `precision_recall_curve` and the Youden score to find a better-fitted threshold.
 
-- ~~Due to resource constraints, I'm still training over 2D slices. I am planning to stack adjacent slices together to form multichannel data for each mask. This will help the model understand the continuity and dependency of objects within the CT slices without being resource-exhaustive.~~
+- Due to resource constraints, I'm still training over 2D slices. I am planning to stack adjacent slices together to form multichannel data for each mask. This will help the model understand the continuity and dependency of objects within the CT slices without being resource-exhaustive.
 
 - Tuning parameters has been a major issue in my experiments. I am thinking of parameter sweeping through methods like Random Search, Grid Search, Brute force search, etc., to find the best set of parameters. I'm looking into using `Optuna`, a Python-based library designed for this task.
 
