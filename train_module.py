@@ -90,6 +90,7 @@ def train_val_seg(epoch, dataloader, model, criterion, optimizer, cyclic_schedul
                 wiou_loss.append(wiou.item())
                 focal_losses.append(fl.item())
                 tversky_losses.append(dl.item())
+                losses.append(loss.item())
 
                 if train:
                     if mixed_precision:
