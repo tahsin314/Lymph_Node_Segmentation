@@ -77,10 +77,10 @@ class LNDataset(Dataset):
 
         mask_value = np.count_nonzero(mask)
         if mask_value>0:
-            labels = 1
+            label = 1
         else:
-            labels = 0
-        target = self.onehot(self.num_class, labels) 
+            label = 0
+        target = self.onehot(self.num_class, label) 
 
         return img_tensor, img_8_bit_tensor, mask_tensor, target
 

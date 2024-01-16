@@ -21,5 +21,6 @@ config_params = dict(
     sampling_mode = None, #upsampling
     pretrained = False,
     mixed_precision = False
+    data_split_path = '../data/split'
     )
 
