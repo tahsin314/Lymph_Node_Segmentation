@@ -42,7 +42,7 @@ def structure_loss(pred, mask):
 
 	return m_wbce, m_iou
 
-def train_val_class(epoch, dataloader, model, criterion, optimizer, cyclic_scheduler, mixed_precision=False, device_ids=[0], train=True):
+def train_val_seg(epoch, dataloader, model, criterion, optimizer, cyclic_scheduler, mixed_precision=False, device_ids=[0], train=True):
     t1 = time.time()
     running_loss = 0
 	epoch_samples = 0
