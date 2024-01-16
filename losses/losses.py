@@ -108,7 +108,7 @@ class BinaryFocalLoss(nn.Module):
     # targets --> B x 1 x H x W where targets[:,:,:,:] = 0/1
     def forward(self, preds, targets):
         N = preds.size(0)
-
+        # print(preds.get_device(), targets.get_device())
         # preds = preds.permute(0, 2, 3, 1).contiguous().view(-1)
         # targets = targets.permute(0, 2, 3, 1).contiguous().view(-1)
         # ##########################################################

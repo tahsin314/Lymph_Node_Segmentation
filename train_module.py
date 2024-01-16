@@ -22,42 +22,42 @@ for key, value in config_params.items():
         exec(f"{key} = {value}")
 
 def structure_loss(pred, mask):
-	avg_pooling = torch.abs(F.avg_pool2d(mask, kernel_size=31, stride=1, padding=15) - mask)
-	neg_part_base = 1
-	
-	#omitting
-	weit =  neg_part_base + 5*avg_pooling  
-														
-	bce = F.binary_cross_entropy_with_logits(pred, mask, reduction='none')
-	wbce = (weit*bce)
-	wbce = wbce.sum(dim=(2, 3))/weit.sum(dim=(2, 3))
-	
-	pred = torch.sigmoid(pred)
-	inter = ((pred * mask)*weit).sum(dim=(2, 3))
-	union = ((pred + mask)*weit).sum(dim=(2, 3))
-	wiou = 1 - ((inter + 1)/(union - inter+1))
-	
-	m_wbce = wbce.mean()
-	m_iou = wiou.mean()
+    avg_pooling = torch.abs(F.avg_pool2d(mask, kernel_size=31, stride=1, padding=15) - mask)
+    neg_part_base = 1
+    
+    #omitting
+    weit =  neg_part_base + 5*avg_pooling  
+                                                        
+    bce = F.binary_cross_entropy_with_logits(pred, mask, reduction='none')
+    wbce = (weit*bce)
+    wbce = wbce.sum(dim=(2, 3))/weit.sum(dim=(2, 3))
+    
+    pred = torch.sigmoid(pred)
+    inter = ((pred * mask)*weit).sum(dim=(2, 3))
+    union = ((pred + mask)*weit).sum(dim=(2, 3))
+    wiou = 1 - ((inter + 1)/(union - inter+1))
+    
+    m_wbce = wbce.mean()
+    m_iou = wiou.mean()
 
-	return m_wbce, m_iou
+    return m_wbce, m_iou
 
 def train_val_seg(epoch, dataloader, model, criterion, optimizer, cyclic_scheduler, mixed_precision=False, device_ids=[0], train=True):
     t1 = time.time()
     running_loss = 0
-	epoch_samples = 0
+    epoch_samples = 0
     
     dice_scores = []
-	raw_dice_coeff = 0
-	raw_val_dice = 0
+    raw_dice_coeff = 0
+    raw_val_dice = 0
 
-	wbce_loss = []
-	wiou_loss = []
-	losses = []
-	focal_losses = []
-	tversky_losses = []
-	
-	
+    wbce_loss = []
+    wiou_loss = []
+    losses = []
+    focal_losses = []
+    tversky_losses = []
+    
+    
     scaler = torch.cuda.amp.GradScaler()
     stage = 'train' if train else 'validation'
 
@@ -156,26 +156,26 @@ def train_val_seg(epoch, dataloader, model, criterion, optimizer, cyclic_schedul
     elapsed = int(time.time() - t1)
     eta = int(elapsed / (idx+1) * (len(dataloader)-(idx+1)))
     mean_dice_scores = torch.mean(torch.cat(dice_scores)).cpu().item()
-	
+    
     if train: stage='train'
-	else: stage='validation'
+    else: stage='validation'
 
-	# Asymmetric FL and TFL loss
-	avg_fl = np.mean(focal_losses)
-	avg_tl = np.mean(tversky_losses)
-	######
-	# WBCE and WIOU Loss
-	avg_wbce_l = np.mean(wbce_loss)
-	avg_wiou_l = np.mean(wiou_loss)
-	#########
-	avg_hloss = np.mean(heatmap_losses)
-	avg_loss = np.mean(losses)
+    # Asymmetric FL and TFL loss
+    avg_fl = np.mean(focal_losses)
+    avg_tl = np.mean(tversky_losses)
+    ######
+    # WBCE and WIOU Loss
+    avg_wbce_l = np.mean(wbce_loss)
+    avg_wiou_l = np.mean(wiou_loss)
+    #########
+    avg_hloss = np.mean(heatmap_losses)
+    avg_loss = np.mean(losses)
 
-	
-	msg = f'stage:{stage} loss: {avg_loss:.4f} Dice {mean_dice_scores:.4f} f_l:{avg_fl:.4f} tl:{avg_tl:.4f} wbce_l:{avg_wbce_l:.4f}  wiou_l:{avg_wiou_l:.4f} h_loss:{avg_hloss}'
-	
-	print(msg)
-	if train:
-		return avg_loss, mean_dice_scores, avg_fl, avg_tl, avg_wbce_l, avg_wiou_l, cyclic_scheduler, model
-	else:
-		return avg_loss, mean_dice_scores, avg_fl, avg_tl, avg_wbce_l, avg_wiou_l
+    
+    msg = f'stage:{stage} loss: {avg_loss:.4f} Dice {mean_dice_scores:.4f} f_l:{avg_fl:.4f} tl:{avg_tl:.4f} wbce_l:{avg_wbce_l:.4f}  wiou_l:{avg_wiou_l:.4f} h_loss:{avg_hloss}'
+    
+    print(msg)
+    if train:
+        return avg_loss, mean_dice_scores, avg_fl, avg_tl, avg_wbce_l, avg_wiou_l, cyclic_scheduler, model
+    else:
+        return avg_loss, mean_dice_scores, avg_fl, avg_tl, avg_wbce_l, avg_wiou_l

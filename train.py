@@ -1,12 +1,12 @@
 import os
 # os.environ["CUDA_VISIBLE_DEVICES"]="2"
+from datetime import datetime
 import gc
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
 import torch
-
 from torch.nn.parallel import DataParallel
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingWarmRestarts
@@ -22,7 +22,7 @@ from config.model_config import model_params
 from config.augment_config import aug_config
 from config.color_config import color_config
 from Datasets.LNDataset import LNDataset
-from train_module import train_val_class
+from train_module import train_val_seg
 from utils import save_model, seed_everything
 from losses.tversky import tversky_loss, focal_tversky
 from losses.dice import dice_loss, dice_lossv2
@@ -32,7 +32,7 @@ from losses.structure_loss import structure_loss, total_structure_loss
 
 from models.utils import turn_on_efficient_conv_bn_eval_for_single_model
 from models.Focus_Net.s_net import s_net
-from losses import FocusNetLoss
+from losses.losses import FocusNetLoss
 
 from tensorboardX import SummaryWriter
 
@@ -79,8 +79,8 @@ model = s_net(1, 1)
 # turn_on_efficient_conv_bn_eval_for_single_model(model)
 total_params = sum(p.numel() for p in model.parameters())
 wandb.log({'# Model Params': total_params})
-flops, _ = profile(model, inputs=(torch.randn(1, 2*num_slices+1, sz, sz),))
-wandb.log({'# Model FLOPS': flops})
+# flops, _ = profile(model, inputs=(torch.randn(1, 2*num_slices+1, sz, sz),))
+# wandb.log({'# Model FLOPS': flops})
 # model = model.to(device)
 device_ids = [1, 0, 2, 3]
 model = DataParallel(model, device_ids=device_ids)
@@ -95,7 +95,7 @@ plist = [
 optim = Adam(plist, lr=lr)
 lr_scheduler = ReduceLROnPlateau(optim, mode='max', patience=5, factor=0.5, min_lr=1e-6, verbose=True)
 cyclic_scheduler = CosineAnnealingWarmRestarts(optim, 5*len(data_module.train_dataloader()), 2, lr/20, -1)
-wandb.watch(models=model, criterion=citerion, log='parameters')
+wandb.watch(models=model, criterion=criterion, log='parameters')
 
 if pretrained:
     best_state = torch.load(f"model_dir/{model_name}_dice.pth")
@@ -123,15 +123,16 @@ train_losses = []
 valid_losses = []
 
 log_dir = './history_dir/logs'
-os.makedirs(log_dir, exist=True)
+os.makedirs(log_dir, exist_ok=True)
+run_id = f'{datetime.now():%Y-%m-%d %H:%M:%S%z}'
 writer = SummaryWriter(os.path.join(log_dir, str(run_id)))
 
 for epoch in range(prev_epoch_num, n_epochs):
     torch.cuda.empty_cache()
     print(gc.collect())
 
-    train_loss, train_dice, train_fl, train_tl, t_wbce_l, t_wiou_l, cyclic_scheduler, model = train_val_seg(epoch, data_module.train_dataloader(), model, optimizer, criterion, run_id, mixed_precision=mixed_precision, device='cuda', train=True)
-	valid_loss, valid_dice, valid_fl, valid_tl, v_wbce_l, v_wiou_l,  = train_val_seg(epoch, data_module.val_dataloader(), model, optimizer, criterion, run_id, mixed_precision=mixed_precision, device='cuda', train=False)
+    train_loss, train_dice, train_fl, train_tl, t_wbce_l, t_wiou_l, cyclic_scheduler, model = train_val_seg(epoch, data_module.train_dataloader(), model, criterion, optim, run_id, mixed_precision=mixed_precision, train=True, device_ids=device_ids)
+    valid_loss, valid_dice, valid_fl, valid_tl, v_wbce_l, v_wiou_l,  = train_val_seg(epoch, data_module.val_dataloader(), model, criterion, optim, run_id, mixed_precision=mixed_precision, train=False, device_ids=device_ids)
     # NaN check
     if valid_loss != valid_loss:
         print(f'{RED}Mixed Precision{RESET} rendering nan value. Forcing {RED}Mixed Precision{RESET} to be False ...')
