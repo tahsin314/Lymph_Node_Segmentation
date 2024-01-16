@@ -22,7 +22,6 @@ from config.model_config import model_params
 from config.augment_config import aug_config
 from config.color_config import color_config
 from Datasets.LNDataset import LNDataset
-from Datasets.data_utils import data_module_creation, load_data
 from train_module import train_val_class
 from utils import save_model, seed_everything
 from losses.tversky import tversky_loss, focal_tversky
@@ -40,20 +39,36 @@ wandb.init(
     settings=wandb.Settings(start_method='fork')
 )
 
-
 for key, value in config_params.items():
     if isinstance(value, str):
         exec(f"{key} = '{value}'")
     else:
         exec(f"{key} = {value}")
+
 for key, value in color_config.items():
     if isinstance(value, str):
         exec(f"{key} = '{value}'")
-
-
         
 seed_everything(SEED)
+df = pd.read_csv(f"{data_dir}/train_labels.csv")
+train_df = df[(df['fold_patient'] != fold)] 
+valid_df = df[df['fold_patient'] == fold]
+test_df = pd.read_csv(f"{data_dir}/test_labels.csv")
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+train_ds = LNDataset(train_df.path.values, train_df.label.values, dim=sz,
+  transforms=None)
+
+valid_ds = LNDataset(valid_df.path.values, valid_df.label.values, dim=sz,
+  transforms=None)
+
+test_ds = LNDataset(test_df.path.values, test_df.label.values, dim=sz,
+  transforms=None)
+
+# data = CloudDataset(base_path=data_dir)
+# train_ds, valid_ds, test_ds = torch.utils.data.random_split(data, (4000, 2400, 2000))
+data_module = DataModule(train_ds, valid_ds, test_ds, batch_size=bs)
 model = model_params[config_params['model_name']]
 # turn_on_efficient_conv_bn_eval_for_single_model(model)
 total_params = sum(p.numel() for p in model.parameters())
@@ -65,10 +80,11 @@ device_ids = [1, 0, 2, 3]
 model = DataParallel(model, device_ids=device_ids)
 model.to(f'cuda:{device_ids[0]}', non_blocking=True)
 
+# citerion = BinaryDiceLoss(reduction='mean')
 citerion = structure_loss
-
 plist = [ 
-        {'params': model.parameters(),  'lr': lr}
+        {'params': model.parameters(),  'lr': lr},
+        # {'params': model.head.parameters(),  'lr': lr}
     ]
 optim = Adam(plist, lr=lr)
 lr_scheduler = ReduceLROnPlateau(optim, mode='max', patience=5, factor=0.5, min_lr=1e-6, verbose=True)
@@ -104,15 +120,8 @@ for epoch in range(prev_epoch_num, n_epochs):
     torch.cuda.empty_cache()
     print(gc.collect())
 
-    save_path = config_params['data_split_path']
-    train_set = load_data(save_path)
-	val_set = load_data(save_path, split='val')
-	test_set = load_data(save_path, split='test')
-	_, _, _, data_module = data_moudle_creation(train_set, val_set, test_set)
-
     train_loss, train_dice_scores, train_recall_scores, cyclic_scheduler = train_val_class(epoch, data_module.train_dataloader(), 
                                             model, citerion, optim, cyclic_scheduler, mixed_precision=mixed_precision, device_ids=device_ids, train=True)
-    
     valid_loss, val_dice_scores, val_recall_scores, _ = train_val_class(epoch, data_module.val_dataloader(), 
                                             model, citerion, optim, cyclic_scheduler, mixed_precision=mixed_precision, device_ids=device_ids, train=False)
     # NaN check

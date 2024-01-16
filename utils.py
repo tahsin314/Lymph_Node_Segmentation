@@ -14,7 +14,7 @@ from torch.autograd import Variable
 from matplotlib import pyplot as plt
 import itertools
 from sklearn.metrics import confusion_matrix
-# import seaborn as sns
+import seaborn as sns
 from tqdm import tqdm as T
 import pandas as pd
 from torch import nn
@@ -39,7 +39,7 @@ def seed_everything(seed):
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
 
-def window_image(img, window_center=40, window_width=400, 
+def window_image(img, window_center=40, window_width=350, 
 intercept=-1024, slope=1, rescale=False):
     # transform to hu
     img = (img*slope +intercept) #for translation adjustments given in the dicom file. 
@@ -48,11 +48,8 @@ intercept=-1024, slope=1, rescale=False):
     img[img<img_min] = img_min #set img_min for all HU levels less than minimum HU level
     img[img>img_max] = img_max #set img_max for all HU levels higher than maximum HU level
     if rescale: 
-        img = (img - img_min) / (img_max - img_min)
-    
-    img_8_bit = (img*255.0).astype('uint8')
-
-    return img_8_bit, img
+        img = ((img - img_min) / (img_max - img_min)*255.0).astype('uint8') 
+    return img
 
 def clip_gradient(optimizer, grad_clip):
     """

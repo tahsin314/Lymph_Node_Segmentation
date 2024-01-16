@@ -1,5 +1,4 @@
 
-from torch import inf
 ''' You only need to change the config_parmas dictionary'''
 config_params = dict(
     data_dir = "../DATA/lymph_node/ct_221_2_npz", #"../DATA/Clouds/38-Cloud_training"
@@ -21,6 +20,5 @@ config_params = dict(
     sampling_mode = None, #upsampling
     pretrained = False,
     mixed_precision = False
-    data_split_path = '../data/split'
     )
 

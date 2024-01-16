@@ -14,5 +14,5 @@ model_params = dict(
     CaraNet = caranet(in_chans=2*config_params['num_slices'] + 1),
     FCBFormer = FCBFormer(size=config_params['sz']),
     DUCKNet = DuckNet(in_chans=2*config_params['num_slices'] + 1, starting_filters=11)
-)
+    )
 
