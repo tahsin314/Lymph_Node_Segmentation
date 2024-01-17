@@ -56,9 +56,11 @@ class BinaryTverskyLoss(nn.Module):
         N = preds.size(0)
         P = F.sigmoid(preds)
         
-        P = P.permute(0, 2, 3, 1).contiguous().view(-1, 1)
-        class_mask = targets.permute(0, 2, 3, 1).contiguous().view(-1, 1)
-        
+        # P = P.permute(0, 2, 3, 1).contiguous().view(-1, 1)
+        # class_mask = targets.permute(0, 2, 3, 1).contiguous().view(-1, 1)
+        P = P.view(N, -1)
+        class_mask = targets.view(N, -1)
+        print(P.max(), targets.max())
         smooth = torch.zeros(1, dtype=torch.float32).fill_(0.00001)
         smooth = smooth.to(P.device)
         ones = torch.ones(P.shape).to(P.device)

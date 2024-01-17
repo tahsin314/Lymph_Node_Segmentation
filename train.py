@@ -30,6 +30,8 @@ from losses.loss import FocusNetLoss, DiceLoss
 from losses.hybrid import hybrid_loss
 from losses.structure_loss import structure_loss, total_structure_loss
 
+from fvcore.nn import FlopCountAnalysis
+
 from models.utils import turn_on_efficient_conv_bn_eval_for_single_model
 from models.Focus_Net.s_net import s_net
 from losses.losses import FocusNetLoss
@@ -79,8 +81,9 @@ model = s_net(1, 1)
 # turn_on_efficient_conv_bn_eval_for_single_model(model)
 total_params = sum(p.numel() for p in model.parameters())
 wandb.log({'# Model Params': total_params})
+flops = FlopCountAnalysis(model, torch.randn(1, 2*num_slices+1, sz, sz))
 # flops, _ = profile(model, inputs=(torch.randn(1, 2*num_slices+1, sz, sz),))
-# wandb.log({'# Model FLOPS': flops})
+wandb.log({'# Model FLOPS': flops.total()})
 # model = model.to(device)
 device_ids = [1, 0, 2, 3]
 model = DataParallel(model, device_ids=device_ids)
@@ -131,8 +134,8 @@ for epoch in range(prev_epoch_num, n_epochs):
     torch.cuda.empty_cache()
     print(gc.collect())
 
-    train_loss, train_dice, train_fl, train_tl, t_wbce_l, t_wiou_l, cyclic_scheduler, model = train_val_seg(epoch, data_module.train_dataloader(), model, criterion, optim, run_id, mixed_precision=mixed_precision, train=True, device_ids=device_ids)
-    valid_loss, valid_dice, valid_fl, valid_tl, v_wbce_l, v_wiou_l,  = train_val_seg(epoch, data_module.val_dataloader(), model, criterion, optim, run_id, mixed_precision=mixed_precision, train=False, device_ids=device_ids)
+    train_loss, train_dice, train_fl, train_tl, t_wbce_l, t_wiou_l, cyclic_scheduler, model = train_val_seg(epoch, data_module.train_dataloader(), model, criterion, optim, run_id=run_id, mixed_precision=mixed_precision, train=True, device_ids=device_ids)
+    valid_loss, valid_dice, valid_fl, valid_tl, v_wbce_l, v_wiou_l,  = train_val_seg(epoch, data_module.val_dataloader(), model, criterion, optim, run_id=run_id, mixed_precision=mixed_precision, train=False, device_ids=device_ids)
     # NaN check
     if valid_loss != valid_loss:
         print(f'{RED}Mixed Precision{RESET} rendering nan value. Forcing {RED}Mixed Precision{RESET} to be False ...')
