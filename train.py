@@ -10,7 +10,7 @@ import torch
 from torch.nn.parallel import DataParallel
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CosineAnnealingWarmRestarts
-from thop import profile
+from fvcore.nn import FlopCountAnalysis
 
 import wandb
 from Datasets.CloudDataset import CloudDataset
@@ -25,7 +25,7 @@ from train_module import train_val_class
 from utils import save_model, seed_everything
 from losses.tversky import tversky_loss, focal_tversky
 from losses.dice import dice_loss, dice_lossv2
-from losses.loss import FocusNetLoss, DiceLoss
+from losses.focusnetloss import FocusNetLoss
 from losses.hybrid import hybrid_loss
 from losses.structure_loss import structure_loss, total_structure_loss
 
@@ -72,15 +72,15 @@ model = model_params[config_params['model_name']]
 # turn_on_efficient_conv_bn_eval_for_single_model(model)
 total_params = sum(p.numel() for p in model.parameters())
 wandb.log({'# Model Params': total_params})
-# flops, _ = profile(model, inputs=(torch.randn(1, 2*num_slices+1, sz, sz),))
-# wandb.log({'# Model FLOPS': flops})
+flops = FlopCountAnalysis(model, torch.randn(1, 2*num_slices+1, sz, sz))
+wandb.log({'# Model FLOPS': flops.total()})
 # model = model.to(device)
 device_ids = [1, 0, 2, 3]
 model = DataParallel(model, device_ids=device_ids)
 model.to(f'cuda:{device_ids[0]}', non_blocking=True)
 
 # citerion = BinaryDiceLoss(reduction='mean')
-citerion = total_structure_loss
+citerion = FocusNetLoss
 plist = [ 
         {'params': model.parameters(),  'lr': lr},
         # {'params': model.head.parameters(),  'lr': lr}

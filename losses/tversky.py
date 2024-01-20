@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 
-def tversky(y_true, y_pred, alpha=0.5, beta=0.5, smooth=1e-6):
+def tversky(y_true, y_pred, alpha=0.7, beta=3, smooth=1e-6):
     """
     Tversky loss function for segmentation.
     :param y_true: ground truth segmentation mask

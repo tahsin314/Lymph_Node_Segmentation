@@ -40,6 +40,8 @@ the DUCK block, which allows more in-depth feature selection and accurate polyp 
   - Paper: [Dumitru et al, 2023][duck]
   - Code: [DUCK-Net][duck_code]
 
+- **`FocusNet`** : *WIP*
+
 - **`LiVS`** : *WIP*
 
 ## Loss Functions
@@ -57,6 +59,8 @@ the DUCK block, which allows more in-depth feature selection and accurate polyp 
 - This [list][segmentation_etis] contains a list of models benchmarked with high scores on several standard medical segmentation datasets.
   
 ## TODO
+
+- Return loss function outputs as dictionary. In this case, it will be easier to process loss functions that returns multiple outputs. Also, dictionary key, value pairs can be logged into `wandb` easily.
 
 - I'm planning on reporting separate Metric Performance for very small nodules, relatively small, and small nodules to demonstrate the model's effectiveness in prediction. I might tweak the loss functions based on nodule size.
 

@@ -57,7 +57,7 @@ class s_net(nn.Module):
         # output branch
         self.out_conv = nn.Conv2d(32, num_classes, 1, 1)
 
-        self.SOL = heatmap_pred(in_ch=32, out_ch=1)
+        # self.SOL = heatmap_pred(in_ch=32, out_ch=1)
 
     def forward(self, x, label=False):
         group = 1 
@@ -102,9 +102,9 @@ class s_net(nn.Module):
         feature_map, ra_out2 = self.up2(out, self.literal2(o1))
         out = self.out_conv(feature_map)
         
-        heatmap = self.SOL(feature_map)
+        # heatmap = self.SOL(feature_map)
 
-        return out, ra_out1, ra_out2, heatmap
+        return out, ra_out1, ra_out2
 
     def _make_layer(self, block, in_ch, out_ch, num_blocks, se=True, stride=1, reduction=2, dilation_rate=1, norm='bn'):
         layers = []
@@ -133,6 +133,5 @@ if __name__=='__main__':
     # print(receptive_field_dict)
     # print(f'output:{outputs[0].size()} partial_1:{outputs[1].size()} partial_2:{outputs[2].size()}')
     ##print(f'output:{output.size()}')
-
 
 
