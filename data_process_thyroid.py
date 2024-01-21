@@ -13,28 +13,22 @@ import shutil #extra functions for working with files
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
 
+from utils import window_image
+
 
 num_slices = 2
 label_dict = {'patient_id':[], 'slice_num':[], 'label':[]}
-data_dir = 'data'
-new_data_dir = f"{data_dir}_slices_{num_slices}_npz"
-check_data_dir = f"{data_dir}_check"
+data_dir = '/home/mdmahfuzalhasan/Documents/data/Thyroid_cartilage/data'
+dir_name = f'thyroid_slices_{num_slices}_npz'
+
+check_data_dir = os.path.join(data_dir, dir_name)
+os.makedirs(check_data_dir, exist_ok=True)
+
+img_dir_name = f'thyroid_slices_{num_slices}_jpg'
+check_image_dir = os.path.join(data_dir, dir_name)
+os.makedirs(check_image_dir, exist_ok=True)
+
 patient_ids = os.listdir(data_dir)
-
-
-
-def window_image(img, window_center=940, window_width=2120, 
-intercept=0, slope=1, rescale=True):
-    # for thyroid window range is -200 to 2000 
-    # transform to hu
-    img = (img*slope +intercept) #for translation adjustments given in the dicom file. 
-    img_min = window_center - window_width//2 #minimum HU level
-    img_max = window_center + window_width//2 #maximum HU level
-    img[img<img_min] = img_min #set img_min for all HU levels less than minimum HU level
-    img[img>img_max] = img_max #set img_max for all HU levels higher than maximum HU level
-    if rescale: 
-        img = ((img - img_min) / (img_max - img_min)*255.0).astype('uint8') 
-    return img
 
 
 def convert_save_segmentation_mask(pat_id):
@@ -70,7 +64,7 @@ def convert_save_segmentation_mask(pat_id):
     print(padded_data.shape)
     for i in range(num_slices, padded_data.shape[-1] - num_slices):
         #print('Checking for ground truth label,array sum: ', np.sum(lbl_array[i]))
-        img = window_image(padded_data[:,:,i-num_slices:i+num_slices+1])
+        img_8_bit, img = window_image(padded_data[:,:,i-num_slices:i+num_slices+1], window_center=940, window_width=2120, intercept=0, slope=1, rescale=True)
         mask = lbl_array[i-num_slices]
         mask[mask>0] = 255
         
@@ -84,19 +78,11 @@ def convert_save_segmentation_mask(pat_id):
         np.savez(os.path.join(check_data_dir, pat_id, f'masks/{i-num_slices}'), mask)
         
         cv2.imwrite(os.path.join(check_data_dir, pat_id, f'masks/{i-num_slices}.png'), mask)
-        for j in range(img.shape[-1]):
-            path = os.path.join(os.path.join(check_data_dir, pat_id, 'images', str(i)))
+        for j in range(img_8_bit.shape[-1]):
+            path = os.path.join(os.path.join(check_image_dir, pat_id, 'images', f'{i-num_slices}'))
             os.makedirs(path, exist_ok=True)
-            cv2.imwrite(os.path.join(path, f'{j}.png'), img[:,:,j])
+            cv2.imwrite(os.path.join(path, f'{j}.png'), img_8_bit[:,:,j])
 
-
-
-        # img = window_image(padded_data[:,:,i-num_slices:i+num_slices+1], 40, 400, 0, 1)
-        # img = window_image(img_pat_id[:,:,i])
-        # img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
-        # img = cv2.flip(img, 1)
-        # cv2.imwrite(os.path.join(check_data_dir, pat_id, f'images/{i}.png'), img)
-        #cv2.imwrite(os.path.join(path, str(i)+'.png'), lbl_array[i]*255)
     message = 'Masks img folder done'
     return message
 
