@@ -80,7 +80,7 @@ model = DataParallel(model, device_ids=device_ids)
 model.to(f'cuda:{device_ids[0]}', non_blocking=True)
 
 # citerion = BinaryDiceLoss(reduction='mean')
-citerion = FocusNetLoss
+citerion = tversky_loss
 plist = [ 
         {'params': model.parameters(),  'lr': lr},
         # {'params': model.head.parameters(),  'lr': lr}

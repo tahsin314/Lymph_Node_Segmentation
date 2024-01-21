@@ -42,14 +42,19 @@ def data_processing(args):
         np.savez(os.path.join(new_data_dir, pat_id, f'masks/{i-num_slices}'), mask)
         # cv2.imwrite(os.path.join(new_data_dir, pat_id, f'images/{i}.png'), img)
         # cv2.imwrite(os.path.join(new_data_dir, pat_id, f'masks/{i}.png'), mask)
+    return label_dict
 
 def datapath(patient_id, slice_num):return f"{patient_id}/images/{slice_num}.npz"
 
 if __name__ == '__main__':
     args_list = [(patient_id, num_slices) for patient_id in patient_ids]
     with Pool(16) as p:
-        list(T(p.imap(data_processing, args_list), total=len(patient_ids), colour='red'))
-    df = pd.DataFrame(label_dict)
+        results = list(T(p.imap(data_processing, args_list), total=len(patient_ids), colour='red'))
+    # Merge results iteratively using a loop:
+    merged_label_dict = {}
+    for result in results:
+        merged_label_dict.update(result)
+    df = pd.DataFrame(merged_label_dict)
     df.to_csv(f"{new_data_dir}/labels.csv", index=False)
     gkf = GroupKFold(n_splits=5)
     patient_ids = df.patient_id.unique().tolist()
