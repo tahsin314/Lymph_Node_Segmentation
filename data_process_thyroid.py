@@ -34,7 +34,7 @@ patient_ids = os.listdir(data_dir)
 def convert_save_segmentation_mask(pat_id):
 
     data_file = [f for f in os.listdir(os.path.join(data_dir, pat_id))if '.nrrd' in f and 'Segmentation' not in f][0]
-    seg_file = [f for f in os.listdir(os.path.join(data_dir, pat_id))if 'Segmentation.seg' in f][0]
+    seg_file = [j for j in os.listdir(os.path.join(data_dir, pat_id)) if ('Segmentation.seg' in j) or ('Image.nrrd' in j)][0]
     
     os.makedirs(os.path.join(check_data_dir, pat_id, 'images'), exist_ok=True)
     os.makedirs(os.path.join(check_data_dir, pat_id, 'masks'), exist_ok=True)
