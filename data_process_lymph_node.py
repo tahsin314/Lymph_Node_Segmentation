@@ -8,7 +8,7 @@ import cv2
 import nrrd
 import pandas as pd
 # from p_tqdm import p_map
-num_slices = 2
+num_slices = 0
 data_dir = "../DATA/lymph_node/ct_221"
 new_data_dir = f"../DATA/lymph_node/ct_221_{num_slices}_npz"
 label_dict = {'patient_id':[], 'slice_num':[], 'label':[]}
@@ -49,18 +49,25 @@ def datapath(patient_id, slice_num):return f"{patient_id}/images/{slice_num}.npz
 if __name__ == '__main__':
     args_list = [(patient_id, num_slices) for patient_id in patient_ids]
     with Pool(16) as p:
-        results = list(T(p.imap(data_processing, args_list), total=len(patient_ids), colour='red'))
+        results = list(T(p.imap(data_processing, args_list), total=len(patient_ids[:20]), colour='red'))
+        print(len(results))
     # Merge results iteratively using a loop:
     merged_label_dict = {}
-    for result in results:
-        merged_label_dict.update(result)
+
+    for d in results:
+        for key, value in d.items():
+            if key in merged_label_dict:
+                merged_label_dict[key].extend(value)
+            else:
+                merged_label_dict[key] = value
+
     df = pd.DataFrame(merged_label_dict)
     df.to_csv(f"{new_data_dir}/labels.csv", index=False)
     gkf = GroupKFold(n_splits=5)
-    patient_ids = df.patient_id.unique().tolist()
+    patient_ids = df.explode('patient_id')['patient_id'].unique().tolist()
     patient_ids.sort()
-    train_pat_ids = patient_ids[:160]
-    test_pat_ids = patient_ids[160:]
+    train_pat_ids = patient_ids[:180]
+    test_pat_ids = patient_ids[180:]
     df['path'] = list(map(datapath, df['patient_id'], df['slice_num']))   
     df['path'] = df['path'].map(lambda x: f"{new_data_dir}/{x}")
     train_df = df[df["patient_id"].isin(train_pat_ids)].reset_index(drop=True)
