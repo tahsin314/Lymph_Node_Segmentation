@@ -10,7 +10,7 @@ Manual examination of CT scan slices can be time-consuming, and the occurrence o
 - Run `conda env create -f environment.yml` to create a conda environment.
 - Extract `Cervical Lymph Nodes- First 100 Cases` and `Cervical Lymph Nodes- Second 121 Cases`. Keep all patient data under the same directory.
 - Update your data directory in `config/config.py` files `config_params` dictionary.
-- Run `data_process.py`. It will read each patient data and corresponding masks and convert to soft tissue windowed `npz` files. It will also generate lymph node labels (1-present, 0-not present) for each slice.
+- Run `data_process_lymph_node.py`. It will read each patient data and corresponding masks and convert to soft tissue windowed `npz` files. It will also generate lymph node labels (1-present, 0-not present) for each slice.
 - You can configure parameters such as `batch size`, `learning rate`, `image dimension` from `config.py`.
 - Run `train.py`. It will train a classification model on the extracted data. You can choose several models and loss functions to use for training for the `config.py` file. A description of the models and loss functions are added below.
 
