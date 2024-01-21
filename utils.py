@@ -55,11 +55,8 @@ def window_image(img, window_center=40, window_width=400, intercept=0, slope=1, 
     img_norm = (img - img_min) / (img_max - img_min)
     #print('img_norm type: ',img_norm.dtype)
     
-    # 8-bit
-    #[0, 255] --> [0, 1]
-    img_8_bit = (img_norm*255.0).astype('uint8') 
-    #print('img_8_bit type: ',img_8_bit.dtype)
-
+    # 8-bit: [0, 255] -->astype('uint8')--> [0, 1]
+    img_8_bit = (img_norm*255.0).astype('uint8')
     return img_8_bit, img_norm
 
 def clip_gradient(optimizer, grad_clip):

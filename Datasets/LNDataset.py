@@ -46,9 +46,6 @@ class LNDataset(Dataset):
             one_hot_mask = np.zeros((2, self.dim, self.dim), dtype=np.uint8)
             one_hot_mask[0, :, :] = (mask == 0).astype(np.uint8)
             one_hot_mask[1, :, :] = (mask == 1).astype(np.uint8)
-            # if np.sum(mask)>0:
-            #     print(np.argmax(one_hot_mask, axis=0).shape)
-            #     cv2.imwrite(f"random_masks/{image_id.split('/')[-1]}", 255*np.argmax(one_hot_mask, axis=0))
             
         return image, mask
 
