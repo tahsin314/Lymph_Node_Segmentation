@@ -5,6 +5,7 @@ from models.mit.mit_PLD_b2 import mit_PLD_b2
 from models.CaraNet.caranet import caranet
 from models.FCBFormer.FCBFormer import FCBFormer
 from models.DUCKNet.DUCKNet import DuckNet
+from models.Focus_Net.s_net import s_net
 
 model_params = dict(
 
@@ -13,6 +14,6 @@ model_params = dict(
     ssformer_L = mit_PLD_b4(class_num=1, in_chans=2*config_params['num_slices'] + 1),
     CaraNet = caranet(in_chans=2*config_params['num_slices'] + 1),
     FCBFormer = FCBFormer(size=config_params['sz']),
-    DUCKNet = DuckNet(in_chans=2*config_params['num_slices'] + 1, starting_filters=11)
+    DUCKNet = DuckNet(in_chans=2*config_params['num_slices'] + 1, starting_filters=11),
+    SNet = s_net(channel=2*config_params['num_slices'] + 1, num_classes=1)
     )
-

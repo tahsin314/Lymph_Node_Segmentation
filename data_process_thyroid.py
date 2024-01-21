@@ -61,7 +61,8 @@ def convert_save_segmentation_mask(pat_id):
     lbl_array[depth_slice, height_slice, width_slice] = mask_array
     
     padded_data = np.pad(img_pat_id, ((0, 0), (0, 0), (num_slices, num_slices)), mode='constant')
-    print(padded_data.shape)
+    print(f'pat id:{pat_id} shape:{padded_data.shape}')
+
     for i in range(num_slices, padded_data.shape[-1] - num_slices):
         #print('Checking for ground truth label,array sum: ', np.sum(lbl_array[i]))
         img_8_bit, img = window_image(padded_data[:,:,i-num_slices:i+num_slices+1], window_center=940, window_width=2120, intercept=0, slope=1, rescale=True)
@@ -69,19 +70,22 @@ def convert_save_segmentation_mask(pat_id):
         mask[mask>0] = 255
         
         label_dict['patient_id'].append(pat_id)
-        label_dict['slice_num'].append(i)
+        label_dict['slice_num'].append(i-num_slices)
         if np.sum(mask) == 0:
             label_dict['label'].append(0)
         else: label_dict['label'].append(1)
         
+        os.makedirs(os.path.join(check_data_dir, pat_id, 'images'), exist_ok=True)
+        os.makedirs(os.path.join(check_data_dir, pat_id, 'masks'), exist_ok=True)
         np.savez(os.path.join(check_data_dir, pat_id, f'images/{i-num_slices}'), img)
         np.savez(os.path.join(check_data_dir, pat_id, f'masks/{i-num_slices}'), mask)
+
+        mask_img_path = os.path.join(os.path.join(check_image_dir, pat_id, 'masks'), exist_ok=True)
+        img_path = os.path.join(os.path.join(check_image_dir, pat_id, 'images', f'{i-num_slices}'), exist_ok=True)
         
-        cv2.imwrite(os.path.join(check_data_dir, pat_id, f'masks/{i-num_slices}.png'), mask)
+        cv2.imwrite(os.path.join(mask_img_path, f'{i-num_slices}.png'), mask)
         for j in range(img_8_bit.shape[-1]):
-            path = os.path.join(os.path.join(check_image_dir, pat_id, 'images', f'{i-num_slices}'))
-            os.makedirs(path, exist_ok=True)
-            cv2.imwrite(os.path.join(path, f'{j}.png'), img_8_bit[:,:,j])
+            cv2.imwrite(os.path.join(img_path, f'{j}.png'), img_8_bit[:,:,j])
 
     message = 'Masks img folder done'
     return message
@@ -92,5 +96,3 @@ if __name__ == '__main__':
     args_list = [(patient_id) for patient_id in patient_ids]
     with Pool(16) as p:
         list(T(p.imap(convert_save_segmentation_mask, args_list), total=len(patient_ids), colour='red'))
-
-
