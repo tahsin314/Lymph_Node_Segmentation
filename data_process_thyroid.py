@@ -18,23 +18,31 @@ from utils import window_image
 
 num_slices = 2
 label_dict = {'patient_id':[], 'slice_num':[], 'label':[]}
-data_dir = '/home/mdmahfuzalhasan/Documents/data/Thyroid_cartilage/data'
-dir_name = f'thyroid_slices_{num_slices}_npz'
 
-check_data_dir = os.path.join(data_dir, dir_name)
+data_dir = '/home/mdmahfuzalhasan/Documents/data/Thyroid_cartilage/data'
+root_dir = '/home/mdmahfuzalhasan/Documents/data/Thyroid_cartilage'
+
+dir_name = f'thyroid_slices_{num_slices}_npz'
+check_data_dir = os.path.join(root_dir, dir_name)
 os.makedirs(check_data_dir, exist_ok=True)
 
 img_dir_name = f'thyroid_slices_{num_slices}_jpg'
-check_image_dir = os.path.join(data_dir, dir_name)
+check_image_dir = os.path.join(root_dir, dir_name)
 os.makedirs(check_image_dir, exist_ok=True)
 
 patient_ids = os.listdir(data_dir)
 
 
 def convert_save_segmentation_mask(pat_id):
+    try:
+        data_file = [f for f in os.listdir(os.path.join(data_dir, pat_id))if '.nrrd' in f and 'Segmentation' not in f][0]
+    except:
+        print(f'pat_id:{pat_id} data_file:{data_file} doesnt exist')
 
-    data_file = [f for f in os.listdir(os.path.join(data_dir, pat_id))if '.nrrd' in f and 'Segmentation' not in f][0]
-    seg_file = [j for j in os.listdir(os.path.join(data_dir, pat_id)) if ('Segmentation.seg' in j) or ('Image.nrrd' in j)][0]
+    try:
+        seg_file = [j for j in os.listdir(os.path.join(data_dir, pat_id)) if ('Segmentation.seg' in j) or ('Image.nrrd' in j)][0]
+    except:
+        print(f'pat_id:{pat_id} seg_file:{seg_file} doesnt exist') 
     
     os.makedirs(os.path.join(check_data_dir, pat_id, 'images'), exist_ok=True)
     os.makedirs(os.path.join(check_data_dir, pat_id, 'masks'), exist_ok=True)
@@ -53,15 +61,19 @@ def convert_save_segmentation_mask(pat_id):
     #converting segmentation mask to original image size
     offset = header['Segmentation_ReferenceImageExtentOffset'].split()
     offset_width, offset_height, offset_depth = [int(value) for value in offset]
-    #print(offset_width, offset_height, offset_depth)
+    if offset_depth + mask_depth > lbl_array.shape[0]:
+        diff = offset_depth + mask_depth - lbl_array.shape[0]
+        print(f'pat id:{pat_id} mask_Depth:{mask_depth} offset_depth:{offset_depth} lbl_array:{lbl_array.shape} diff:{diff}')
+    else:
+        diff = 0
     mask_depth, mask_height, mask_width = mask_array.shape
     depth_slice = slice(offset_depth, offset_depth + mask_depth - diff)
     height_slice = slice(offset_height, offset_height + mask_height)
     width_slice = slice(offset_width, offset_width + mask_width)
-    lbl_array[depth_slice, height_slice, width_slice] = mask_array
+    lbl_array[depth_slice, height_slice, width_slice] = mask_array[:mask_depth-diff, :, :]
     
     padded_data = np.pad(img_pat_id, ((0, 0), (0, 0), (num_slices, num_slices)), mode='constant')
-    print(f'pat id:{pat_id} shape:{padded_data.shape}')
+    
 
     for i in range(num_slices, padded_data.shape[-1] - num_slices):
         #print('Checking for ground truth label,array sum: ', np.sum(lbl_array[i]))
