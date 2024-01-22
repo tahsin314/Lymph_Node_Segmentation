@@ -62,12 +62,14 @@ def convert_save_segmentation_mask(pat_id):
     #converting segmentation mask to original image size
     offset = header['Segmentation_ReferenceImageExtentOffset'].split()
     offset_width, offset_height, offset_depth = [int(value) for value in offset]
+    mask_depth, mask_height, mask_width = mask_array.shape
+
     if offset_depth + mask_depth > lbl_array.shape[0]:
         diff = offset_depth + mask_depth - lbl_array.shape[0]
         print(f'pat id:{pat_id} mask_Depth:{mask_depth} offset_depth:{offset_depth} lbl_array:{lbl_array.shape} diff:{diff}')
     else:
         diff = 0
-    mask_depth, mask_height, mask_width = mask_array.shape
+        
     depth_slice = slice(offset_depth, offset_depth + mask_depth - diff)
     height_slice = slice(offset_height, offset_height + mask_height)
     width_slice = slice(offset_width, offset_width + mask_width)
