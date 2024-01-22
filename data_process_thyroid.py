@@ -48,7 +48,7 @@ def convert_save_segmentation_mask(pat_id):
     os.makedirs(os.path.join(check_data_dir, pat_id, 'masks'), exist_ok=True)
 
     image_path = os.path.join(data_dir, pat_id, data_file)
-    img_pat_id = nrrd.read(os.path.join(data_dir, pat_id, data_file))[0]
+    img_pat_id = nrrd.read(image_path)[0]
     
     segmentation_file_path = os.path.join(data_dir, pat_id, seg_file)
     mask_array, header = nrrd.read(segmentation_file_path)
