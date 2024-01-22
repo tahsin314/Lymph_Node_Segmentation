@@ -55,7 +55,7 @@ def convert_save_segmentation_mask(pat_id):
     offset_width, offset_height, offset_depth = [int(value) for value in offset]
     #print(offset_width, offset_height, offset_depth)
     mask_depth, mask_height, mask_width = mask_array.shape
-    depth_slice = slice(offset_depth, offset_depth + mask_depth)
+    depth_slice = slice(offset_depth, offset_depth + mask_depth - diff)
     height_slice = slice(offset_height, offset_height + mask_height)
     width_slice = slice(offset_width, offset_width + mask_width)
     lbl_array[depth_slice, height_slice, width_slice] = mask_array
@@ -133,8 +133,15 @@ patient_ids = os.listdir(data_dir)
 
 def convert_save_segmentation_mask(pat_id):
 
-    data_file = [f for f in os.listdir(os.path.join(data_dir, pat_id))if '.nrrd' in f and 'Segmentation' not in f][0]
-    seg_file = [f for f in os.listdir(os.path.join(data_dir, pat_id))if 'Segmentation.seg' in f][0]
+    try:
+        data_file = [f for f in os.listdir(os.path.join(data_dir, pat_id))if '.nrrd' in f and 'Segmentation' not in f and 'Image' not in f][0]
+    except:
+        print(f'pat_id:{pat_id} data file:{data_file} doesnt exist')
+    
+    try:
+        seg_file = [j for j in os.listdir(os.path.join(data_dir, pat_id)) if ('Segmentation.seg' in j) or ('Image.nrrd' in j)][0]
+    except:
+        print(f'pat_id:{pat_id} seg file:{seg_file} doesnt exist')
     
     os.makedirs(os.path.join(check_data_dir, pat_id, 'images'), exist_ok=True)
     os.makedirs(os.path.join(check_data_dir, pat_id, 'masks'), exist_ok=True)
@@ -155,7 +162,12 @@ def convert_save_segmentation_mask(pat_id):
     offset_width, offset_height, offset_depth = [int(value) for value in offset]
     #print(offset_width, offset_height, offset_depth)
     mask_depth, mask_height, mask_width = mask_array.shape
-    depth_slice = slice(offset_depth, offset_depth + mask_depth)
+    if mask_depth + offset_depth > lbl_array.shape[0]:
+        diff = (mask_depth+offset_depth) - lbl_array.shape[0]
+        print(f'')
+    else:
+        diff = 0
+    depth_slice = slice(offset_depth, offset_depth + mask_depth - diff)
     height_slice = slice(offset_height, offset_height + mask_height)
     width_slice = slice(offset_width, offset_width + mask_width)
     lbl_array[depth_slice, height_slice, width_slice] = mask_array
