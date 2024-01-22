@@ -36,7 +36,7 @@ patient_ids = os.listdir(data_dir)
 
 def convert_save_segmentation_mask(pat_id):
     try:
-        data_file = [f for f in os.listdir(os.path.join(data_dir, pat_id))if '.nrrd' in f and 'Segmentation' not in f][0]
+        data_file = [f for f in os.listdir(os.path.join(data_dir, pat_id)) if ('.nrrd' in f) and ('Segmentation' not in f) and ('Image' not in f)][0]
     except:
         print(f'pat_id:{pat_id} data_file:{data_file} doesnt exist')
 
