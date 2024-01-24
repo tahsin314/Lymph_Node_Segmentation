@@ -14,7 +14,7 @@ from torch.autograd import Variable
 from matplotlib import pyplot as plt
 import itertools
 from sklearn.metrics import confusion_matrix
-import seaborn as sns
+# import seaborn as sns
 from tqdm import tqdm as T
 import pandas as pd
 from torch import nn
