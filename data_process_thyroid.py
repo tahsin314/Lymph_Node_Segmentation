@@ -20,8 +20,8 @@ num_slices = 2
 label_dict = {'patient_id':[], 'slice_num':[], 'label':[]}
 
 # path in server
-data_dir = 'C:/Users/royan/MY_COMPUTER/Lab_works/RAIL LAB/AWS_Thyroid_Cartilage/codes/Thyroid Cartilage/data'
-root_dir = 'C:/Users/royan/MY_COMPUTER/Lab_works/RAIL LAB/AWS_Thyroid_Cartilage/codes/Thyroid Cartilage'
+data_dir = './data/thyroid-cartilage/data'
+root_dir = './data/thyroid-cartilage'
 
 dir_name = f'thyroid_slices_{num_slices}_npz'
 check_data_dir = os.path.join(root_dir, dir_name)
@@ -92,24 +92,25 @@ def convert_save_segmentation_mask(pat_id):
             label_dict['label'].append(0)
         else: label_dict['label'].append(1)
         
-        rotated = np.rot90(img_8_bit, k=-1, axes=(0,1))
-        flipped = np.flip(rotated, axis=1)
+        rotated = np.rot90(img, k=-1, axes=(0,1))
+        img = np.flip(rotated, axis=1)
+
         os.makedirs(os.path.join(check_data_dir, pat_id, 'images'), exist_ok=True)
         os.makedirs(os.path.join(check_data_dir, pat_id, 'masks'), exist_ok=True)
         np.savez(os.path.join(check_data_dir, pat_id, f'images/{i-num_slices}'), img)
         np.savez(os.path.join(check_data_dir, pat_id, f'masks/{i-num_slices}'), mask)
 
-        mask_img_path = os.path.join(check_image_dir, pat_id, 'masks')
-        img_path = os.path.join(check_image_dir, pat_id, 'images')
-        os.makedirs(mask_img_path, exist_ok=True)
-        os.makedirs(img_path, exist_ok=True)
-        # writing images and masks
-        cv2.imwrite(os.path.join(mask_img_path, f'{i-num_slices}.png'), mask)
-        if i==num_slices:
-            for j in range(img_8_bit.shape[-1]):
-                cv2.imwrite(os.path.join(img_path, f'{j}.png'), flipped[:,:,j])
-        else:
-            cv2.imwrite(os.path.join(img_path, f'{i+num_slices}.png'), flipped[:,:,-1])
+        # mask_img_path = os.path.join(check_image_dir, pat_id, 'masks')
+        # img_path = os.path.join(check_image_dir, pat_id, 'images')
+        # os.makedirs(mask_img_path, exist_ok=True)
+        # os.makedirs(img_path, exist_ok=True)
+        # # writing images and masks
+        # cv2.imwrite(os.path.join(mask_img_path, f'{i-num_slices}.png'), mask)
+        # if i==num_slices:
+        #     for j in range(img_8_bit.shape[-1]):
+        #         cv2.imwrite(os.path.join(img_path, f'{j}.png'), flipped[:,:,j])
+        # else:
+        #     cv2.imwrite(os.path.join(img_path, f'{i+num_slices}.png'), flipped[:,:,-1])
     message = 'Masks img folder done'
     return message
 
