@@ -38,12 +38,12 @@ def convert_save_segmentation_mask(pat_id):
     try:
         data_file = [f for f in os.listdir(os.path.join(data_dir, pat_id)) if ('.nrrd' in f) and ('Segmentation' not in f) and ('Image' not in f)][0]
     except:
-        print(f'pat_id:{pat_id} data_file:{data_file} doesnt exist')
+        print(f'pat_id:{pat_id} data_file doesnt exist')
 
     try:
         seg_file = [j for j in os.listdir(os.path.join(data_dir, pat_id)) if ('Segmentation.seg' in j) or ('Image.nrrd' in j)][0]
     except:
-        print(f'pat_id:{pat_id} seg_file:{seg_file} doesnt exist') 
+        print(f'pat_id:{pat_id} seg_file doesnt exist') 
     
     os.makedirs(os.path.join(check_data_dir, pat_id, 'images'), exist_ok=True)
     os.makedirs(os.path.join(check_data_dir, pat_id, 'masks'), exist_ok=True)
