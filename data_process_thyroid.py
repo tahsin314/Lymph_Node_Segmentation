@@ -20,8 +20,8 @@ num_slices = 2
 label_dict = {'patient_id':[], 'slice_num':[], 'label':[]}
 
 # path in server
-data_dir = '/shared/rail_lab/thyroid_cartilage/data'
-root_dir = '/shared/rail_lab/thyroid_cartilage'
+data_dir = 'C:/Users/royan/MY_COMPUTER/Lab_works/RAIL LAB/AWS_Thyroid_Cartilage/codes/Thyroid Cartilage/data'
+root_dir = 'C:/Users/royan/MY_COMPUTER/Lab_works/RAIL LAB/AWS_Thyroid_Cartilage/codes/Thyroid Cartilage'
 
 dir_name = f'thyroid_slices_{num_slices}_npz'
 check_data_dir = os.path.join(root_dir, dir_name)
@@ -92,6 +92,8 @@ def convert_save_segmentation_mask(pat_id):
             label_dict['label'].append(0)
         else: label_dict['label'].append(1)
         
+        rotated = np.rot90(img_8_bit, k=-1, axes=(0,1))
+        flipped = np.flip(rotated, axis=1)
         os.makedirs(os.path.join(check_data_dir, pat_id, 'images'), exist_ok=True)
         os.makedirs(os.path.join(check_data_dir, pat_id, 'masks'), exist_ok=True)
         np.savez(os.path.join(check_data_dir, pat_id, f'images/{i-num_slices}'), img)
@@ -105,9 +107,9 @@ def convert_save_segmentation_mask(pat_id):
         cv2.imwrite(os.path.join(mask_img_path, f'{i-num_slices}.png'), mask)
         if i==num_slices:
             for j in range(img_8_bit.shape[-1]):
-                cv2.imwrite(os.path.join(img_path, f'{j}.png'), img_8_bit[:,:,j])
+                cv2.imwrite(os.path.join(img_path, f'{j}.png'), flipped[:,:,j])
         else:
-            cv2.imwrite(os.path.join(img_path, f'{i+num_slices}.png'), img_8_bit[:,:,-1])
+            cv2.imwrite(os.path.join(img_path, f'{i+num_slices}.png'), flipped[:,:,-1])
     message = 'Masks img folder done'
     return message
 
