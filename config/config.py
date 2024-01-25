@@ -1,13 +1,13 @@
 
 ''' You only need to change the config_parmas dictionary'''
 config_params = dict(
-    data_dir = "../DATA/lymph_node/ct_221_npz", #"../DATA/Clouds/38-Cloud_training"
+    data_dir = "../DATA/lymph_node/ct_221_2_npz", #"../DATA/Clouds/38-Cloud_training"
     model_dir = 'model_dir',
-    model_name = 'ssformer_S',
+    model_name = 'SNet',
     n_fold = 5,
     fold = 1,
     sz = 512,
-    num_slices = 0,
+    num_slices = 2,
     threshold = 0.25,
     dataset = 'LN Segmentation',
     lr = 1e-3,
