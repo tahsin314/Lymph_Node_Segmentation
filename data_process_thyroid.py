@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import GroupKFold, StratifiedKFold
 import cv2
 from tqdm import tqdm as T
 import nrrd
@@ -20,8 +20,8 @@ num_slices = 2
 label_dict = {'patient_id':[], 'slice_num':[], 'label':[]}
 
 # path in server
-data_dir = './data/thyroid-cartilage/data'
-root_dir = './data/thyroid-cartilage'
+data_dir = '/shared/rail_lab/thyroid_cartilage/data'
+root_dir = '/shared/rail_lab/thyroid_cartilage/'
 
 dir_name = f'thyroid_slices_{num_slices}_npz'
 check_data_dir = os.path.join(root_dir, dir_name)
@@ -32,7 +32,6 @@ check_image_dir = os.path.join(root_dir, img_dir_name)
 os.makedirs(check_image_dir, exist_ok=True)
 
 patient_ids = os.listdir(data_dir)
-
 
 def convert_save_segmentation_mask(pat_id):
     try:
@@ -112,11 +111,54 @@ def convert_save_segmentation_mask(pat_id):
         # else:
         #     cv2.imwrite(os.path.join(img_path, f'{i+num_slices}.png'), flipped[:,:,-1])
     message = 'Masks img folder done'
-    return message
+    return label_dict
+
+def datapath(patient_id, slice_num):return f"{patient_id}/images/{slice_num}.npz"
 
 #block for only :main images
 #for pat_id in patient_ids:
 if __name__ == '__main__':
     args_list = [(patient_id) for patient_id in patient_ids]
-    with Pool(16) as p:
-        list(T(p.imap(convert_save_segmentation_mask, args_list), total=len(patient_ids), colour='red'))
+    with Pool(32) as p:
+        results = list(T(p.imap(convert_save_segmentation_mask, args_list), total=len(patient_ids), colour='red'))
+     # Merge results iteratively using a loop:
+    merged_label_dict = {}
+
+    for d in results:
+        for key, value in d.items():
+            if key in merged_label_dict:
+                merged_label_dict[key].extend(value)
+            else:
+                merged_label_dict[key] = value
+
+    df = pd.DataFrame(merged_label_dict)
+    df.to_csv(f"{check_data_dir}/labels.csv", index=False)
+    gkf = GroupKFold(n_splits=5)
+    patient_ids = df.explode('patient_id')['patient_id'].unique().tolist()
+    patient_ids.sort()
+    train_pat_ids = patient_ids[:300]
+    test_pat_ids = patient_ids[300:]
+    df['path'] = list(map(datapath, df['patient_id'], df['slice_num']))   
+    df['path'] = df['path'].map(lambda x: f"{check_data_dir}/{x}")
+    train_df = df[df["patient_id"].isin(train_pat_ids)].reset_index(drop=True)
+    test_df = df[df["patient_id"].isin(test_pat_ids)].reset_index(drop=True)
+
+    # for i, (train_index, val_index) in enumerate(gkf.split(train_df['path'], train_df['label'], groups=train_df['patient_id'])):
+    #     train_idx = train_index
+    #     val_idx = val_index
+    #     train_df.loc[val_idx, 'fold'] = i
+
+    pat_id_dict = {}
+
+    for i, pat_id in enumerate(train_pat_ids):
+        pat_id_dict.update({pat_id:i*5//len(train_pat_ids)})
+
+    train_df['fold_patient'] = train_df['patient_id'].map(lambda x: pat_id_dict[x])
+
+    # train_df['fold'] = train_df['fold'].astype('int')
+    train_df['fold_patient'] = train_df['fold_patient'].astype('int')
+    # df['fold'] = df['patient_id'].map(lambda x: 0 if x in train_pat_ids else 1)
+    print(train_df.head(20))
+
+    train_df.to_csv(f"{check_data_dir}/train_labels.csv", index=False)
+    test_df.to_csv(f"{check_data_dir}/test_labels.csv", index=False)
