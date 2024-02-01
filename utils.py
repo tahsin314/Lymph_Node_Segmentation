@@ -110,6 +110,7 @@ def visualizer(predictions, outputs, labels, idx, metric_scores_batch):
     
     output = 255.*outputs[idx].sigmoid().detach().cpu().numpy()[0]
     output = output.astype(np.uint8)
+    # print(np.min(output), np.max(output))
     output = cv2.cvtColor(output, cv2.COLOR_GRAY2RGB)
     label = 255.*labels[idx].cpu().numpy()
     label = label.astype(np.uint8)

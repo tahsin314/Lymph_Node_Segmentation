@@ -32,7 +32,7 @@ from losses.structure_loss import structure_loss, total_structure_loss
 from models.utils import turn_on_efficient_conv_bn_eval_for_single_model
 
 wandb.init(
-    project="LN Segmentation",
+    project="TC Segmentation",
     config=config_params,
     name=f"{config_params['model_name']}",
     settings=wandb.Settings(start_method='fork')
@@ -49,10 +49,11 @@ for key, value in color_config.items():
         exec(f"{key} = '{value}'")
         
 seed_everything(SEED)
-df = pd.read_csv(f"{data_dir}/train_labels.csv")
+df = pd.read_csv(f"{data_dir}/train_labels.csv").drop_duplicates()
 train_df = df[(df['fold_patient'] != fold)] 
 valid_df = df[df['fold_patient'] == fold]
-test_df = pd.read_csv(f"{data_dir}/test_labels.csv")
+test_df = pd.read_csv(f"{data_dir}/test_labels.csv").drop_duplicates()
+print(len(train_df), len(valid_df), len(test_df))
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -80,7 +81,7 @@ model = DataParallel(model, device_ids=device_ids)
 model.to(f'cuda:{device_ids[0]}', non_blocking=True)
 
 # citerion = BinaryDiceLoss(reduction='mean')
-citerion = tversky_loss
+citerion = FocusNetLoss
 plist = [ 
         {'params': model.parameters(),  'lr': lr},
         # {'params': model.head.parameters(),  'lr': lr}
@@ -148,8 +149,8 @@ for epoch in range(prev_epoch_num, n_epochs):
     lr_scheduler.step(np.mean(val_dice_scores))
     wandb.log({"Train Average DICE": np.mean(train_dice_scores), "Train SD DICE": np.std(train_dice_scores), "Epoch": epoch})
     wandb.log({"Validation Average DICE": np.mean(val_dice_scores), "Validation SD DICE": np.std(val_dice_scores),"Epoch": epoch})
-    wandb.log({"Train Average Recall": np.mean(train_recall_scores), "Train SD DICE": np.std(train_recall_scores), "Epoch": epoch})
-    wandb.log({"Validation Average Recall": np.mean(val_recall_scores), "Validation SD DICE": np.std(val_recall_scores),"Epoch": epoch})
+    wandb.log({"Train Average Recall": np.mean(train_recall_scores), "Train SD Recall": np.std(train_recall_scores), "Epoch": epoch})
+    wandb.log({"Validation Average Recall": np.mean(val_recall_scores), "Validation SD Recall": np.std(val_recall_scores),"Epoch": epoch})
     
     print(ITALIC+"="*70+RESET)
     print(f"{BOLD}{UNDERLINE}{CYAN}Epoch {epoch+1} Report:{RESET}")

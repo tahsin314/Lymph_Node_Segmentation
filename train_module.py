@@ -59,6 +59,7 @@ def train_val_class(epoch, dataloader, model, criterion, optimizer, cyclic_sched
             eta = int(elapsed / (idx+1) * (len(dataloader)-(idx+1)))
             if isinstance(outputs, tuple): 
                 outputs = outputs[0]
+                # print(torch.max(outputs), torch.min(outputs))
                 # outputs = (outputs - outputs.min()) / (outputs.max() - outputs.min() + 1e-8)
 
             dice_scores_batch = dice_score_by_data_torch(labels, outputs, threshold = threshold).detach().cpu().numpy()

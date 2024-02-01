@@ -1,181 +1,43 @@
-import argparse
-import torch.nn as nn
-import math
-import torch
-import torch.nn.functional as F
+import os
+import numpy as np
+import pandas as pd
+from config.config import config_params
 
-class Bottle2neck(nn.Module):
-    expansion = 4
-    def __init__(self, inplanes, planes, stride=1, downsample=None, baseWidth=26, scale=4, stype='normal'):
-        super(Bottle2neck, self).__init__()
+for key, value in config_params.items():
+    if isinstance(value, str):
+        exec(f"{key} = '{value}'")
+    else:
+        exec(f"{key} = {value}")
+        
+df = pd.read_csv(f"{data_dir}/train_labels.csv")
+df = df.drop_duplicates()
+train_df = df[(df['fold_patient'] != fold)] 
+valid_df = df[df['fold_patient'] == fold]
+test_df = pd.read_csv(f"{data_dir}/test_labels.csv")
+all_df = pd.read_csv(f"{data_dir}/labels.csv")
+all_df = all_df.drop_duplicates()
+# print(len(np.unique(df['patient_id'].tolist())))
+num_train, num_val, num_test, num_all = [], [], [], []
 
-        width      = int(math.floor(planes*(baseWidth/64.0)))
-        self.conv1 = nn.Conv2d(inplanes, width*scale, kernel_size=1, bias=False)
-        self.bn1   = nn.BatchNorm2d(width*scale)
-
-        if scale == 1:
-            self.nums = 1
-        else:
-            self.nums = scale - 1
-        if stype == 'stage':
-            self.pool = nn.AvgPool2d(kernel_size=3, stride=stride, padding=1)
-        convs, bns = [], []
-        for i in range(self.nums):
-            convs.append(nn.Conv2d(width, width, kernel_size=3, stride=stride, padding=1, bias=False))
-            bns.append(nn.BatchNorm2d(width))
-        self.convs = nn.ModuleList(convs)
-        self.bns   = nn.ModuleList(bns)
-
-        self.conv3 = nn.Conv2d(width * scale, planes * self.expansion, kernel_size=1, bias=False)
-        self.bn3   = nn.BatchNorm2d(planes * self.expansion)
-
-        self.downsample = downsample
-        self.stype = stype
-        self.scale = scale
-        self.width = width
-
-    def forward(self, x):
-        out = F.relu(self.bn1(self.conv1(x)), inplace=True)
-        spx = torch.split(out, self.width, 1)
-        for i in range(self.nums):
-            if i == 0 or self.stype == 'stage':
-                sp = spx[i]
-            else:
-                sp = sp + spx[i]
-            sp = self.convs[i](sp)
-            sp = F.relu(self.bns[i](sp), inplace=True)
-            out = sp if i == 0 else torch.cat((out, sp), 1)
-        if self.scale != 1 and self.stype == 'normal':
-            out = torch.cat((out, spx[self.nums]), 1)
-        elif self.scale != 1 and self.stype == 'stage':
-            out = torch.cat((out, self.pool(spx[self.nums])), 1)
-
-        out = self.bn3(self.conv3(out))
-        if self.downsample is not None:
-            x = self.downsample(x)
-        return F.relu(out+x, inplace=True)
-
-
-class Res2Net(nn.Module):
-    def __init__(self, layers, snapshot, baseWidth=26, scale=4):
-        self.inplanes = 64
-        super(Res2Net, self).__init__()
-        self.snapshot  = snapshot
-        self.baseWidth = baseWidth
-        self.scale = scale
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(3, 32, 3, 2, 1, bias=False),
-            nn.BatchNorm2d(32),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(32, 32, 3, 1, 1, bias=False),
-            nn.BatchNorm2d(32),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(32, 64, 3, 1, 1, bias=False)
-        )
-        self.bn1    = nn.BatchNorm2d(64)
-        self.layer1 = self._make_layer(Bottle2neck, 64, layers[0])
-        self.layer2 = self._make_layer(Bottle2neck, 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(Bottle2neck, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(Bottle2neck, 512, layers[3], stride=2)
-
-    def _make_layer(self, block, planes, blocks, stride=1):
-        downsample = None
-        if stride != 1 or self.inplanes != planes * block.expansion:
-            downsample = nn.Sequential(
-                nn.AvgPool2d(kernel_size=stride, stride=stride, ceil_mode=True, count_include_pad=False),
-                nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=1, bias=False),
-                nn.BatchNorm2d(planes * block.expansion),
-            )
-
-        layers = [block(self.inplanes, planes, stride, downsample=downsample, stype='stage', baseWidth=self.baseWidth, scale=self.scale)]
-        self.inplanes = planes * block.expansion
-        for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes, baseWidth=self.baseWidth, scale=self.scale))
-        return nn.Sequential(*layers)
-
-    def forward(self, x):
-        out1 = F.relu(self.bn1(self.conv1(x)), inplace=True)
-        out1 = F.max_pool2d(out1, kernel_size=3, stride=2, padding=1)
-        out2 = self.layer1(out1)
-        out3 = self.layer2(out2)
-        out4 = self.layer3(out3)
-        out5 = self.layer4(out4)
-        return out2, out3, out4, out5
-
-    def initialize(self):
-        self.load_state_dict(torch.load(self.snapshot), strict=False)
-
-def Res2Net50():
-    return Res2Net([3, 4, 6, 3], '/home/UFAD/m.tahsinmostafiz/Playground/Lymph_Node_Segmentation/model_dir/res2net50_v1b_26w_4s-3cf99910.pth')
-
-def weight_init(module):
-    for n, m in module.named_children():
-        print('initialize: '+n)
-        if isinstance(m, nn.Conv2d):
-            nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='relu')
-            if m.bias is not None:
-                nn.init.zeros_(m.bias)
-        elif isinstance(m, (nn.BatchNorm2d, nn.InstanceNorm2d)):
-            if m.weight is not None:
-                nn.init.ones_(m.weight)
-            if m.bias is not None:
-                nn.init.zeros_(m.bias)
-        elif isinstance(m, nn.Linear):
-            nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='relu')
-            if m.bias is not None:
-                nn.init.zeros_(m.bias)
-        elif isinstance(m, nn.Sequential):
-            weight_init(m)
-        elif isinstance(m, (nn.ReLU, nn.PReLU)):
-            pass
-        else:
-            m.initialize()
-
-class Model(nn.Module):
-    def __init__(self, args):
-        super(Model, self).__init__()
-        self.args    = args
-        self.bkbone  = Res2Net50()
-        self.linear5 = nn.Sequential(nn.Conv2d(2048, 64, kernel_size=1, stride=1, padding=0), nn.BatchNorm2d(64), nn.ReLU(inplace=True))
-        self.linear4 = nn.Sequential(nn.Conv2d(1024, 64, kernel_size=1, stride=1, padding=0), nn.BatchNorm2d(64), nn.ReLU(inplace=True))
-        self.linear3 = nn.Sequential(nn.Conv2d( 512, 64, kernel_size=1, stride=1, padding=0), nn.BatchNorm2d(64), nn.ReLU(inplace=True))
-        self.predict = nn.Conv2d(64*3, 1, kernel_size=1, stride=1, padding=0)
-        self.initialize()
-
-    def forward(self, x, shape=None):
-        out2, out3, out4, out5 = self.bkbone(x)
-        out5 = self.linear5(out5)
-        out4 = self.linear4(out4)
-        out3 = self.linear3(out3)
-
-        out5 = F.interpolate(out5, size=out3.size()[2:], mode='bilinear', align_corners=True)
-        out4 = F.interpolate(out4, size=out3.size()[2:], mode='bilinear', align_corners=True)
-        pred = torch.cat([out5, out4*out5, out3*out4*out5], dim=1)
-        pred = self.predict(pred)
-        return pred
-
-    def initialize(self):
-        if self.args.snapshot:
-            self.load_state_dict(torch.load(self.args.snapshot))
-        else:
-            weight_init(self)
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--datapath'    ,default='../data/train')
-    parser.add_argument('--savepath'    ,default='./out')
-    parser.add_argument('--mode'        ,default='train')
-    parser.add_argument('--lr'          ,default=0.4)
-    parser.add_argument('--epoch'       ,default=128)
-    parser.add_argument('--batch_size'  ,default=64)
-    parser.add_argument('--weight_decay',default=5e-4)
-    parser.add_argument('--momentum'    ,default=0.9)
-    parser.add_argument('--nesterov'    ,default=True)
-    parser.add_argument('--num_workers' ,default=8)
-    parser.add_argument('--snapshot'    ,default=None)
+for i in np.unique(all_df['patient_id'].tolist()):
+    num_all.append(len(os.listdir(f"{data_dir}/{i}/images")))
+    # print(os.listdir(f"{data_dir}/{i}/images/"))
     
-    args = parser.parse_args()
-    ras = Model(args).cuda()
-    input_tensor = torch.randn(1, 3, 512, 512).cuda()
-    out = ras(input_tensor)
-    print(out.size())
+for i in np.unique(train_df['patient_id'].tolist()):
+    num_train.append(len(os.listdir(f"{data_dir}/{i}/images")))
+    
+for i in np.unique(valid_df['patient_id'].tolist()):
+    num_val.append(len(os.listdir(f"{data_dir}/{i}/images")))
+    
+for i in np.unique(test_df['patient_id'].tolist()):
+    num_test.append(len(os.listdir(f"{data_dir}/{i}/images")))
+
+# print(num_train, num_val, num_test, num_all, num_train + num_val + num_test)
+print(f"All mean: {np.mean(num_all)} SD: {np.std(num_all)}")
+print(f"Train mean: {np.mean(num_train)} SD: {np.std(num_train)}")
+print(f"Val mean: {np.mean(num_val)} SD: {np.std(num_val)}")
+print(f"Test mean: {np.mean(num_test)} SD: {np.std(num_test)}")
+
+print(len(all_df))
+print(len(train_df) + len(valid_df) + len(test_df))
+print(len(np.unique(test_df['patient_id'].tolist())))
