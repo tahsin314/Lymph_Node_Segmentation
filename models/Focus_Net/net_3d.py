@@ -5,10 +5,10 @@ import numpy as np
 # from skimage.measure import label, regionprops
 import pdb
 
-from axial_atten import AA_kernel
+from axial_atten_3d import AA_kernel
 # from cross_attention import CrossAttentionBlock
 from self_attention import SelfAttentionBlock
-from conv_layer import Conv
+from conv_layer import Conv, Conv3D
 
 
 def print_network(net):
@@ -24,21 +24,16 @@ class SELayer(nn.Module):
 
     def __init__(self, channel, reduction=4):
         super(SELayer, self).__init__()
-        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.avg_pool = nn.AdaptiveAvgPool3d(1)
         self.conv = nn.Sequential(
-                nn.Conv2d(channel, channel//reduction, kernel_size=1, stride=1),
+                nn.Conv3d(channel, channel//reduction, kernel_size=1, stride=1),
                 nn.ReLU(inplace=True),
-                nn.Conv2d(channel // reduction, channel, kernel_size=1, stride=1),
+                nn.Conv3d(channel // reduction, channel, kernel_size=1, stride=1),
                 nn.Sigmoid()
                 )
     def forward(self, x):
-        # #print('input: ',x.size())
         y = self.avg_pool(x)
-        # #print("avg pool size: ",y.size())
         y = self.conv(y)
-        # #print("after conv: ",y.size())
-        # #print("x*y: ",(x*y).size())
-
         return x * y
 
 def conv3x3(in_planes, out_planes, kernel_size=3, stride=1, padding=1, dilation_rate=1):
@@ -57,23 +52,19 @@ def conv2x2(in_planes, out_planes, kernel_size=3, stride=1, padding=1, dilation_
 class heatmap_pred(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(heatmap_pred, self).__init__()
-        self.bn1 = nn.BatchNorm2d(in_ch)
-        self.conv1 = conv2x2(in_ch, in_ch//2)
+        self.bn1 = nn.BatchNorm3d(in_ch)
+        self.conv1 = conv3x3(in_ch, in_ch)
 
-        self.bn2  = nn.BatchNorm2d(in_ch//2)
-        self.conv2 = conv2x2(in_ch//2, in_ch//2)
+        self.bn2  = nn.BatchNorm3d(in_ch)
+        self.conv2 = conv3x3(in_ch, in_ch)
 
-        self.bn3  = nn.BatchNorm2d(in_ch//2)
-        self.conv3 = conv2x2(in_ch//2, in_ch//4)
-
-        self.conv4  = nn.Conv2d(in_ch//4, out_ch, 1)
+        self.conv3  = nn.Conv3d(in_ch, out_ch, 1)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         out = self.conv1(F.relu(self.bn1(x)))
         out = self.conv2(F.relu(self.bn2(out)))
-        out = self.conv3(F.relu(self.bn3(out)))
-        out = self.conv4(out)
+        out = self.conv3(out)
 
         out = self.sigmoid(out)
 
@@ -204,22 +195,22 @@ class SEBasicBlock(nn.Module):
     def __init__(self, inplanes, planes, kernel_size=3, stride=1, reduction=4, dilation_rate=1, norm='bn'):
         super(SEBasicBlock, self).__init__()
 
-        self.conv1 = conv2x2(inplanes, planes, kernel_size=kernel_size, stride=stride)
+        self.conv1 = conv3x3(inplanes, planes, kernel_size=kernel_size, stride=stride)
         if norm == 'bn':
-            self.bn1 = nn.BatchNorm2d(inplanes)
+            self.bn1 = nn.BatchNorm3d(inplanes)
         elif norm =='in':
-            self.bn1 = nn.InstanceNorm2d(inplanes)
+            self.bn1 = nn.InstanceNorm3d(inplanes)
         elif norm =='gn':
             self.bn1 = nn.GroupNorm(NUM_GROUP, inplanes)
         else:
             raise ValueError('unsupport norm method')
         self.relu = nn.ReLU(inplace=True)
 
-        self.conv2 = conv2x2(planes, planes, kernel_size=kernel_size, dilation_rate=dilation_rate, padding=dilation_rate)
+        self.conv2 = conv3x3(planes, planes, kernel_size=kernel_size, dilation_rate=dilation_rate, padding=dilation_rate)
         if norm == 'bn':
-            self.bn2 = nn.BatchNorm2d(planes)
+            self.bn2 = nn.BatchNorm3d(planes)
         elif norm =='in':
-            self.bn2 = nn.InstanceNorm2d(planes)
+            self.bn2 = nn.InstanceNorm3d(planes)
         elif norm =='gn':
             self.bn2 = nn.GroupNorm(NUM_GROUP, planes)
         else:
@@ -230,23 +221,23 @@ class SEBasicBlock(nn.Module):
         if stride != 1 or inplanes != planes:
             if norm == 'bn':
                 self.shortcut = nn.Sequential(
-                    nn.BatchNorm2d(inplanes),
+                    nn.BatchNorm3d(inplanes),
                     self.relu,
-                    nn.Conv2d(inplanes, planes, kernel_size=1, \
+                    nn.Conv3d(inplanes, planes, kernel_size=1, \
                             stride=stride, bias=False)
                 )
             elif norm =='in':
                 self.shortcut = nn.Sequential(
-                    nn.InstanceNorm2d(inplanes),
+                    nn.InstanceNorm3d(inplanes),
                     self.relu,
-                    nn.Conv2d(inplanes, planes, kernel_size=1, \
+                    nn.Conv3d(inplanes, planes, kernel_size=1, \
                             stride=stride, bias=False)
                 )
             elif norm =='gn':
                 self.shortcut = nn.Sequential(
                     nn.GroupNorm(NUM_GROUP, inplanes),
                     self.relu,
-                    nn.Conv2d(inplanes, planes, kernel_size=1, stride=stride, bias=False)
+                    nn.Conv3d(inplanes, planes, kernel_size=1, stride=stride, bias=False)
                 )
             else:
                 raise ValueError('unsupport norm method')
@@ -263,19 +254,26 @@ class SEBasicBlock(nn.Module):
         out = self.bn2(out)
         out = self.relu(out)
         out = self.conv2(out)
+
         out = self.se(out)
+
         out += self.shortcut(residue)
+
         return out
 
 class inconv(nn.Module):
     def __init__(self, in_ch, out_ch, se=False, norm='bn'):
         super(inconv, self).__init__()
-        self.conv1 = nn.Conv2d(in_ch, out_ch, kernel_size=(3,3), padding=(1,1), bias=False)
+        self.conv1 = nn.Conv3d(in_ch, out_ch, kernel_size=(1,3,3), padding=(0,1,1), bias=False)
         self.relu = nn.ReLU(inplace=True)
-        self.conv2 = SEBasicBlock(out_ch, out_ch, kernel_size=(3,3), norm=norm)
+
+        self.conv2 = SEBasicBlock(out_ch, out_ch, kernel_size=(1,3,3), norm=norm)
+
     def forward(self, x): 
+
         out = self.relu(self.conv1(x))
         out = self.conv2(out)
+
         return out 
 
 class conv_block(nn.Module):
@@ -289,7 +287,6 @@ class conv_block(nn.Module):
         out = self.conv(x)
 
         return out
-    
 class ReverseAxialAttention(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(ReverseAxialAttention, self).__init__()
@@ -298,24 +295,23 @@ class ReverseAxialAttention(nn.Module):
         self.out_ch = out_ch
         # self.out_conv = nn.Conv2d(in_ch, 1, 1, 1)
         self.out_conv = nn.Sequential(
-                            nn.Conv2d(in_ch, in_ch//2, 3, 1, 1),
-                            nn.Conv2d(in_ch//2, 1, 1, 1))
+                            nn.Conv3d(in_ch, in_ch//2, 3, 1, 1),
+                            nn.Conv3d(in_ch//2, 1, 1, 1))
         self.aa_kernel = AA_kernel(out_ch, out_ch)
 
-        self.ra_conv1 = Conv(out_ch,out_ch,3,1,padding=1,bn_acti=True)
-        self.ra_conv2 = Conv(out_ch,out_ch,3,1,padding=1,bn_acti=True)
-        self.ra_conv3 = Conv(out_ch,1,3,1,padding=1,bn_acti=True)
+        self.ra_conv1 = Conv3D(out_ch,out_ch,3,1,padding=1,bn_acti=True)
+        self.ra_conv2 = Conv3D(out_ch,out_ch,3,1,padding=1,bn_acti=True)
+        self.ra_conv3 = Conv3D(out_ch,1,3,1,padding=1,bn_acti=True)
 
     def forward(self, dec_out, enc_out):
-        #print('inside RA attention')
         partial_output = self.out_conv(dec_out)
         partial_output_ra = -1*(torch.sigmoid(partial_output)) + 1
-        #print('partial output: ',partial_output.shape)
+        
 
-        #print(f'attention on enc output: {enc_out.shape}')
         aa_attn = self.aa_kernel(enc_out)
-        # exit()
-        aa_attn_o = partial_output_ra.expand(-1, self.out_ch, -1, -1).mul(aa_attn)
+        #print(f'aa attn:{aa_attn.shape} partial_out:{partial_output_ra.shape}')
+        aa_attn_o = partial_output_ra.expand(-1, self.out_ch, -1, -1, -1).mul(aa_attn)
+        #print(f'aa_attn_o:{aa_attn_o.shape}')
 
         ra =  self.ra_conv1(aa_attn_o) 
         ra = self.ra_conv2(ra) 
@@ -369,7 +365,7 @@ class up_block_cross_attn(nn.Module):
 
 
 class up_block(nn.Module):
-    def __init__(self, in_ch, out_ch, scale=(2, 2), se=False, reduction=2, norm='bn'):
+    def __init__(self, in_ch, out_ch, scale=(2, 2, 2), se=False, reduction=2, norm='bn'):
         super(up_block, self).__init__()
 
         self.scale = scale
@@ -385,7 +381,7 @@ class up_block(nn.Module):
         x_dec = F.interpolate(x_dec, scale_factor=self.scale, mode='nearest')
         #print(f'x_enc:{x_enc.shape} x_dec:{x_dec.shape}')
         out = torch.cat([x_enc, x_dec], dim=1)
-        #print(f'enc+dec: {out.shape}')
+        #print(f'concat:{out.shape}')
         ra_out = self.ra_attn(out, x_enc)    #with concatenated feature
         #print(f'ra out:{ra_out.shape}')
         # ra_out = self.ra_attn(x_dec, x_enc)      #with only decoder feature
@@ -417,27 +413,28 @@ class literal_conv(nn.Module):
 
 class DenseASPPBlock(nn.Sequential):
     """Conv Net block for building DenseASPP"""
+
     def __init__(self, input_num, num1, num2, dilation_rate, drop_out, bn_start=True, norm='bn'):
         super(DenseASPPBlock, self).__init__()
         if bn_start:
             if norm == 'bn':
-                self.add_module('norm_1', nn.BatchNorm2d(input_num))
+                self.add_module('norm_1', nn.BatchNorm3d(input_num))
             elif norm == 'in':
-                self.add_module('norm_1', nn.InstanceNorm2d(input_num))
+                self.add_module('norm_1', nn.InstanceNorm3d(input_num))
             elif norm == 'gn':
                 self.add_module('norm_1', nn.GroupNorm(NUM_GROUP, input_num))
 
         self.add_module('relu_1', nn.ReLU(inplace=True))
-        self.add_module('conv_1', nn.Conv2d(in_channels=input_num, out_channels=num1, kernel_size=1))
+        self.add_module('conv_1', nn.Conv3d(in_channels=input_num, out_channels=num1, kernel_size=1))
 
         if norm == 'bn':
-            self.add_module('norm_2', nn.BatchNorm2d(num1))
+            self.add_module('norm_2', nn.BatchNorm3d(num1))
         elif norm == 'in':
-            self.add_module('norm_2', nn.InstanceNorm2d(num1))
+            self.add_module('norm_2', nn.InstanceNorm3d(num1))
         elif norm == 'gn':
             self.add_module('norm_2', nn.GroupNorm(NUM_GROUP, num1))
         self.add_module('relu_2', nn.ReLU(inplace=True))
-        self.add_module('conv_2', nn.Conv2d(in_channels=num1, out_channels=num2, kernel_size=3,
+        self.add_module('conv_2', nn.Conv3d(in_channels=num1, out_channels=num2, kernel_size=3,
                                             dilation=dilation_rate, padding=dilation_rate))
 
         self.drop_rate = drop_out
@@ -490,11 +487,11 @@ class SOS_branch(nn.Module):
         # upsample
         self.share_up1 = up_block(in_ch=current_num_feature,
                                out_ch=48, se=se, reduction=reduction, norm=norm)
-        self.share_literal1 = nn.Conv2d(48, 48, 3, padding=1)
+        self.share_literal1 = nn.Conv3d(48, 48, 3, padding=1)
 
         self.share_up2 = up_block(in_ch=48, out_ch=32, scale=(
             1, 2, 2), se=se, reduction=reduction, norm=norm)
-        self.share_literal2 = nn.Conv2d(32, 32, 3, padding=1)
+        self.share_literal2 = nn.Conv3d(32, 32, 3, padding=1)
         # branch
         self.out_conv = nn.Conv2d(32, num_classes, 1, 1)
 
