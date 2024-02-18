@@ -10,15 +10,15 @@ config_params = dict(
     num_slices = 2,
     threshold = 0.25,
     dataset = 'Thyroid Cartilage Segmentation',
-    lr = 1e-4,
+    lr = 1.25e-4,
     eps = 1e-5,
     weight_decay = 1e-5,
-    n_epochs = 25,
+    n_epochs = 60,
     bs = 16,
     gradient_accumulation_steps = 2,
     SEED = 2023,
     sampling_mode = None, #upsampling
-    pretrained = True,
+    pretrained = False,
     mixed_precision = False
     )
 

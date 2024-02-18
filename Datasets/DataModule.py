@@ -52,7 +52,7 @@ class DataModule():
 
     def test_dataloader(self):
         if self.test_ds is not None:
-            test_loader = DataLoader(self.test_ds,batch_size=self.batch_size, 
+            test_loader = DataLoader(self.test_ds,batch_size=2*self.batch_size, 
             shuffle=False, num_workers=self.num_workers,
             pin_memory=True)
         return test_loader

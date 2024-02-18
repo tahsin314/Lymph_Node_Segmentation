@@ -177,7 +177,8 @@ for epoch in range(prev_epoch_num, n_epochs):
                 model_name, 'model_dir', 'dice', 'max')
     
     print(ITALIC+"="*70+RESET)
-    
+
+torch.cuda.empty_cache()
 best_state = torch.load(f"model_dir/{model_name}_dice.pth")
 model.load_state_dict(best_state['model'])
 optim.load_state_dict(best_state['optim'])
@@ -186,7 +187,7 @@ lr_scheduler.load_state_dict(best_state['scheduler'])
 print(f"{BLUE}Best Validation result was found in epoch {best_state['epoch']}\n{RESET}")
 print(f"{BLUE}Best Validation Recall {best_state['best_recall']}\n{RESET}")
 print(f"{BLUE}Best Validation Dice {best_state['best_dice']}\n{RESET}")
-test_loss, test_dice_scores, test_recall_scores, _ = train_val_class(epoch, data_module.test_dataloader(), 
+test_loss, test_dice_scores, test_recall_scores, _ = train_val_class(-1, data_module.test_dataloader(), 
                                             model, citerion, optim, cyclic_scheduler, mixed_precision=mixed_precision, device_ids=device_ids, train=False)
 wandb.log({"Test Loss": test_loss, "Test Average DICE": np.mean(test_dice_scores), "Test SD DICE": np.std(test_dice_scores), "Test Average Recall": np.mean(test_recall_scores), "Test SD Recall": np.std(test_recall_scores)})
 wandb.finish()
