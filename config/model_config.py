@@ -6,6 +6,7 @@ from models.CaraNet.caranet import caranet
 from models.FCBFormer.FCBFormer import FCBFormer
 from models.DUCKNet.DUCKNet import DuckNet
 from models.Focus_Net.s_net import s_net
+from models.Focus_Net.s_net import s_net
 
 model_params = dict(
 
@@ -16,5 +17,6 @@ model_params = dict(
     FCBFormer = FCBFormer(size=config_params['sz']),
     DUCKNet = DuckNet(in_chans=2*config_params['num_slices'] + 1, starting_filters=11),
     SNet = s_net(channel=2*config_params['num_slices'] + 1, num_classes=1)
+    DUCKNet = DuckNet(in_chans=2*config_params['num_slices'] + 1, starting_filters=11),
+    SNet = s_net(channel=2*config_params['num_slices'] + 1, num_classes=1)
     )
-

@@ -14,7 +14,7 @@ from torch.autograd import Variable
 from matplotlib import pyplot as plt
 import itertools
 from sklearn.metrics import confusion_matrix
-import seaborn as sns
+# import seaborn as sns
 from tqdm import tqdm as T
 import pandas as pd
 from torch import nn
@@ -39,17 +39,25 @@ def seed_everything(seed):
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
 
-def window_image(img, window_center=40, window_width=350, 
-intercept=-1024, slope=1, rescale=False):
+def window_image(img, window_center=40, window_width=400, intercept=0, slope=1, rescale=True):
     # transform to hu
+    # 16 bit
     img = (img*slope +intercept) #for translation adjustments given in the dicom file. 
-    img_min = window_center - window_width//2 #minimum HU level
-    img_max = window_center + window_width//2 #maximum HU level
+    
+    # [-160, 240] --> 400 ... signed 8 bit --> [-127, 128]
+    img_min = window_center - window_width//2 #minimum HU level -160
+    img_max = window_center + window_width//2 #maximum HU level  240
     img[img<img_min] = img_min #set img_min for all HU levels less than minimum HU level
     img[img>img_max] = img_max #set img_max for all HU levels higher than maximum HU level
-    if rescale: 
-        img = ((img - img_min) / (img_max - img_min)*255.0).astype('uint8') 
-    return img
+    #print('img data type: ',img.dtype)
+
+    # 16 bit-->[0, 1]
+    img_norm = (img - img_min) / (img_max - img_min)
+    #print('img_norm type: ',img_norm.dtype)
+    
+    # 8-bit: [0, 255] -->int 8 bit
+    img_8_bit = (img_norm*255.0).astype('uint8')
+    return img_8_bit, img_norm
 
 def clip_gradient(optimizer, grad_clip):
     """
