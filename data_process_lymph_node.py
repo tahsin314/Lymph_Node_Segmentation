@@ -30,9 +30,9 @@ def data_processing(args):
     os.makedirs(os.path.join(new_data_dir, pat_id, 'images'), exist_ok=True)
     os.makedirs(os.path.join(new_data_dir, pat_id, 'masks'), exist_ok=True)
     for i in range(num_slices, padded_data.shape[-1] - num_slices):
-        img = window_image(padded_data[:,:,i-num_slices:i+num_slices+1], 40, 400, 0, 1)
+        img = window_image(padded_data[:,:,i-num_slices:i+num_slices+1], 40, 400, 0, 1, normalize=True)
         mask = mask_pat_id[:, :, i - num_slices]
-        mask[mask>0] = 255
+        mask[mask>0] = 1
         label_dict['patient_id'].append(pat_id)
         label_dict['slice_num'].append(i)
         if np.sum(mask) == 0:
@@ -49,7 +49,7 @@ def datapath(patient_id, slice_num):return f"{patient_id}/images/{slice_num}.npz
 if __name__ == '__main__':
     args_list = [(patient_id, num_slices) for patient_id in patient_ids]
     with Pool(16) as p:
-        results = list(T(p.imap(data_processing, args_list), total=len(patient_ids[:20]), colour='red'))
+        results = list(T(p.imap(data_processing, args_list), total=len(patient_ids), colour='red'))
         print(len(results))
     # Merge results iteratively using a loop:
     merged_label_dict = {}
@@ -61,13 +61,13 @@ if __name__ == '__main__':
             else:
                 merged_label_dict[key] = value
 
-    df = pd.DataFrame(merged_label_dict)
+    df = pd.DataFrame(merged_label_dict).drop_duplicates()
     df.to_csv(f"{new_data_dir}/labels.csv", index=False)
     gkf = GroupKFold(n_splits=5)
     patient_ids = df.explode('patient_id')['patient_id'].unique().tolist()
     patient_ids.sort()
-    train_pat_ids = patient_ids[:180]
-    test_pat_ids = patient_ids[180:]
+    train_pat_ids = patient_ids[:200]
+    test_pat_ids = patient_ids[200:]
     df['path'] = list(map(datapath, df['patient_id'], df['slice_num']))   
     df['path'] = df['path'].map(lambda x: f"{new_data_dir}/{x}")
     train_df = df[df["patient_id"].isin(train_pat_ids)].reset_index(drop=True)

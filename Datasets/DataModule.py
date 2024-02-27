@@ -1,3 +1,4 @@
+from collections import Counter
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import cv2
@@ -34,9 +35,9 @@ class DataModule():
 
     def train_dataloader(self):
         if self.sampler is not None:
-            sampler = self.sampler(labels=self.train_ds.get_labels(), mode="upsampling")
+            # sampler = self.sampler(labels=self.train_ds.get_labels(), mode="upsampling")
             train_loader = DataLoader(self.train_ds,batch_size=self.batch_size, 
-            sampler= sampler, shuffle=False, drop_last=True,
+            sampler= self.sampler, shuffle=False, drop_last=True,
             num_workers=self.num_workers, pin_memory=True)
         else:
             train_loader = DataLoader(self.train_ds, batch_size=self.batch_size, shuffle=self.shuffle, 

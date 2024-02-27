@@ -20,7 +20,9 @@ from config.config import config_params
 from config.model_config import model_params
 from config.augment_config import aug_config
 from config.color_config import color_config
+from augmentation import Augmentation
 from Datasets.LNDataset import LNDataset
+from catalyst.data.sampler import DynamicBalanceClassSampler
 from train_module import train_val_class
 from utils import save_model, seed_everything
 from losses.tversky import tversky_loss, focal_tversky
@@ -32,7 +34,7 @@ from losses.structure_loss import structure_loss, total_structure_loss
 from models.utils import turn_on_efficient_conv_bn_eval_for_single_model
 
 wandb.init(
-    project="TC Segmentation",
+    project="LN Segmentation",
     config=config_params,
     name=f"{config_params['model_name']}",
     settings=wandb.Settings(start_method='fork')
@@ -56,19 +58,19 @@ test_df = pd.read_csv(f"{data_dir}/test_labels.csv").drop_duplicates()
 print(len(train_df), len(valid_df), len(test_df))
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
+train_aug = Augmentation()
 train_ds = LNDataset(train_df.path.values, train_df.label.values, dim=sz,
-  transforms=None)
+  transforms=train_aug)
 
 valid_ds = LNDataset(valid_df.path.values, valid_df.label.values, dim=sz,
   transforms=None)
 
 test_ds = LNDataset(test_df.path.values, test_df.label.values, dim=sz,
   transforms=None)
-
+sampler = DynamicBalanceClassSampler(labels = train_ds.get_labels(), exp_lambda = 0.95, start_epoch= 5, mode = 'downsampling')
 # data = CloudDataset(base_path=data_dir)
 # train_ds, valid_ds, test_ds = torch.utils.data.random_split(data, (4000, 2400, 2000))
-data_module = DataModule(train_ds, valid_ds, test_ds, batch_size=bs)
+data_module = DataModule(train_ds, valid_ds, test_ds, batch_size=bs, sampler = sampler)
 model = model_params[config_params['model_name']]
 # turn_on_efficient_conv_bn_eval_for_single_model(model)
 total_params = sum(p.numel() for p in model.parameters())
@@ -76,7 +78,7 @@ wandb.log({'# Model Params': total_params})
 flops = FlopCountAnalysis(model, torch.randn(1, 2*num_slices+1, sz, sz))
 wandb.log({'# Model FLOPS': flops.total()})
 # model = model.to(device)
-device_ids = [1, 0, 2, 3]
+device_ids = [2, 3]
 model = DataParallel(model, device_ids=device_ids)
 model.to(f'cuda:{device_ids[0]}', non_blocking=True)
 

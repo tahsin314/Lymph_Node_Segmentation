@@ -40,15 +40,15 @@ def seed_everything(seed):
     torch.backends.cudnn.deterministic = True
 
 def window_image(img, window_center=40, window_width=350, 
-intercept=-1024, slope=1, rescale=False):
+intercept=-1024, slope=1, normalize=False):
     # transform to hu
     img = (img*slope +intercept) #for translation adjustments given in the dicom file. 
     img_min = window_center - window_width//2 #minimum HU level
     img_max = window_center + window_width//2 #maximum HU level
     img[img<img_min] = img_min #set img_min for all HU levels less than minimum HU level
     img[img>img_max] = img_max #set img_max for all HU levels higher than maximum HU level
-    if rescale: 
-        img = ((img - img_min) / (img_max - img_min)*255.0).astype('uint8') 
+    if normalize: 
+        img = (img - img_min) / (img_max - img_min)
     return img
 
 def clip_gradient(optimizer, grad_clip):
@@ -84,7 +84,7 @@ def model_summary(model, sample_input):
     df = pd.DataFrame(layers_info, columns=columns)
     return df, columns, total_params
 
-def save_model(valid_metric, best_valid_metric, model_dict, model_name, save_dir, metric_name, mode= 'max'):
+def save_model(valid_metric, best_valid_metric, model_dict, model_name, save_dir, metric_name, epoch, mode= 'max'):
     
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -94,6 +94,9 @@ def save_model(valid_metric, best_valid_metric, model_dict, model_name, save_dir
             print(f'{BOLD}{GREEN}Validation {metric_name} has {mode_dict[mode]}d from:  {best_valid_metric:.4f} to: {valid_metric:.4f}{RESET}')
             best_valid_metric = valid_metric
             save_file_path = os.path.join(save_dir, f'{model_name}_{metric_name}.pth')
+            torch.save(model_dict, save_file_path)
+        else:
+            save_file_path = os.path.join(save_dir, f'{model_name}_{epoch}.pth')
             torch.save(model_dict, save_file_path)
     
     return best_valid_metric, model_dict 

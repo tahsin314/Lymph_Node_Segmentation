@@ -54,7 +54,7 @@ class Augmentation():
         )
         return transform
 
-    def generation(self, img, target, img_8_bit):
+    def generation(self, img, target):
         # scale_factor = params.scale_factor
         # if isReduced:
         #     width = int(img.shape[1] * scale_factor)
@@ -62,9 +62,9 @@ class Augmentation():
         #     dsize = (width, height)
         #     img = cv2.resize(img, dsize)
         #     target = cv2.resize(target, dsize)
-        transformed = self.transform_structure(image=img, image0=target, image1=img_8_bit)
-        aug_img, aug_label, aug_img_8_bit = transformed['image'], transformed['image0'], transformed['image1']
+        transformed = self.transform_structure(image=img, image0=target)
+        aug_img, aug_label = transformed['image'], transformed['image0']
         #transformed_pixel = self.transform_pixel(image=aug_img)
         #aug_img = transformed_pixel['image']
-        return aug_img, aug_label, aug_img_8_bit
+        return aug_img, aug_label
 
