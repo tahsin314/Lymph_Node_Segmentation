@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from net import *
+from .net import *
 # from torch_receptive_field import receptive_field
 import pdb
 
@@ -25,8 +25,8 @@ class s_net(nn.Module):
         self.conv4xd2 = self._make_layer(
             conv_block, 64, 64, 2, se=se, stride=1, reduction=reduction, norm=norm, dilation_rate=(2, 2))
 
-        ##print(f'conv4x:{self.conv4x}')
-        ##print(f'conv4xd2:{self.conv4xd2}')
+        #print(f'conv4x:{self.conv4x}')
+        #print(f'conv4xd2:{self.conv4xd2}')
 
         # DenseASPP
         current_num_feature = 64
@@ -92,18 +92,14 @@ class s_net(nn.Module):
         #print('feature aspp 3: ',feature.size())
 
         aspp4 = self.ASPP_4(feature)
-        #print('aspp4: ', aspp4.size())
+        # print('aspp4: ', aspp4.size())
         feature = torch.cat((aspp4, feature), dim=1)
-        #print(f'final feature: {feature.shape}')
         
 
         out, ra_out1 = self.up1(feature, self.literal1(o2))
         
-        
         ra_out1 = F.interpolate(ra_out1, scale_factor=2, mode='bilinear')
-        #print(f'ra_out1: {ra_out1.shape}')
         feature_map, ra_out2 = self.up2(out, self.literal2(o1))
-        #print(f'ra_out2: {ra_out2.shape}')
         out = self.out_conv(feature_map)
         
         # heatmap = self.SOL(feature_map)
@@ -122,7 +118,7 @@ class s_net(nn.Module):
 
 if __name__=='__main__':
     network = s_net(1, 1, se=True, norm='bn')
-    #####print(network)
+    ####print(network)
     #exit()
     # network.cuda()
     B = 2
@@ -131,12 +127,11 @@ if __name__=='__main__':
     W = 384
     inputs = torch.randn(B, C, H, W)
     outputs = network(inputs)
-    for output in outputs:
-        print(output.size())
-    # #print(f'output:{outputs[0].size()} partial_1:{outputs[1].size()} partial_2:{outputs[2].size()}')
+    print(outputs.size())
+    # print(f'output:{outputs[0].size()} partial_1:{outputs[1].size()} partial_2:{outputs[2].size()}')
     # receptive_field_dict = receptive_field(network, (1, 384, 384), device="cpu")
-    # #print(receptive_field_dict)
-    # #print(f'output:{outputs[0].size()} partial_1:{outputs[1].size()} partial_2:{outputs[2].size()}')
-    ###print(f'output:{output.size()}')
+    # print(receptive_field_dict)
+    # print(f'output:{outputs[0].size()} partial_1:{outputs[1].size()} partial_2:{outputs[2].size()}')
+    ##print(f'output:{output.size()}')
 
 

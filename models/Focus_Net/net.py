@@ -2,13 +2,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-# from skimage.measure import label, regionprops
+from skimage.measure import label, regionprops
 import pdb
 
-from axial_atten import AA_kernel
+from .axial_atten import AA_kernel
 # from cross_attention import CrossAttentionBlock
-from self_attention import SelfAttentionBlock
-from conv_layer import Conv
+from .self_attention import SelfAttentionBlock
+from .conv_layer import Conv
 
 
 def print_network(net):
@@ -16,8 +16,8 @@ def print_network(net):
     for param in net.parameters():
         num_params += param.numel()
 
-    #print(net)
-    #print('Total number of parameters: %d' % num_params)
+    print(net)
+    print('Total number of parameters: %d' % num_params)
 
 
 class SELayer(nn.Module):
@@ -32,12 +32,12 @@ class SELayer(nn.Module):
                 nn.Sigmoid()
                 )
     def forward(self, x):
-        # #print('input: ',x.size())
+        # print('input: ',x.size())
         y = self.avg_pool(x)
-        # #print("avg pool size: ",y.size())
+        # print("avg pool size: ",y.size())
         y = self.conv(y)
-        # #print("after conv: ",y.size())
-        # #print("x*y: ",(x*y).size())
+        # print("after conv: ",y.size())
+        # print("x*y: ",(x*y).size())
 
         return x * y
 
@@ -94,7 +94,7 @@ class SOSNet_sep(nn.Module):
         self.threshold = threshold
 
     def forward(self, x, heatmap, raw, o1, label=False):
-        # #print("heatmap size", heatmap.size())
+        # print("heatmap size", heatmap.size())
         b, n, h, w = heatmap.shape
         locationList = []
 
@@ -174,10 +174,10 @@ class SOSNet_sep(nn.Module):
         assert c ==1 ,"Channel should be 1"
         heatmap = heatmap.view(b, -1)
         index = torch.argmax(heatmap, dim=1)
-        # #print((index))
+        # print((index))
         y = index//w
         x = index - y*w
-        # #print(x, y)
+        # print(x, y)
         # z = int(index // w // h)
         # index -= z * w * h
         
@@ -291,7 +291,6 @@ class conv_block(nn.Module):
         out = self.conv(x)
 
         return out
-    
 class ReverseAxialAttention(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(ReverseAxialAttention, self).__init__()
@@ -309,14 +308,10 @@ class ReverseAxialAttention(nn.Module):
         self.ra_conv3 = Conv(out_ch,1,3,1,padding=1,bn_acti=True)
 
     def forward(self, dec_out, enc_out):
-        #print('inside RA attention')
         partial_output = self.out_conv(dec_out)
         partial_output_ra = -1*(torch.sigmoid(partial_output)) + 1
-        #print('partial output: ',partial_output.shape)
 
-        #print(f'attention on enc output: {enc_out.shape}')
         aa_attn = self.aa_kernel(enc_out)
-        # exit()
         aa_attn_o = partial_output_ra.expand(-1, self.out_ch, -1, -1).mul(aa_attn)
 
         ra =  self.ra_conv1(aa_attn_o) 
@@ -385,11 +380,9 @@ class up_block(nn.Module):
 
     def forward(self, x_dec, x_enc):  #x1 from dec and x2 fro encoder
         x_dec = F.interpolate(x_dec, scale_factor=self.scale, mode='nearest')
-        #print(f'x_enc:{x_enc.shape} x_dec:{x_dec.shape}')
+        # print(f'x_enc:{x_enc.shape} x_dec:{x_dec.shape}')
         out = torch.cat([x_enc, x_dec], dim=1)
-        #print(f'enc+dec: {out.shape}')
         ra_out = self.ra_attn(out, x_enc)    #with concatenated feature
-        #print(f'ra out:{ra_out.shape}')
         # ra_out = self.ra_attn(x_dec, x_enc)      #with only decoder feature
         out = self.conv(out)
         return out, ra_out
