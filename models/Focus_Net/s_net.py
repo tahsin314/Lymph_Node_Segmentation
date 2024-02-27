@@ -133,5 +133,9 @@ if __name__=='__main__':
     # print(receptive_field_dict)
     # print(f'output:{outputs[0].size()} partial_1:{outputs[1].size()} partial_2:{outputs[2].size()}')
     ##print(f'output:{output.size()}')
+<<<<<<< HEAD
+=======
+
+>>>>>>> parent of 380b29f... Model SNet_3D added
 
 
