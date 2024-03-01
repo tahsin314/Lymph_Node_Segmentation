@@ -36,7 +36,7 @@ from models.utils import turn_on_efficient_conv_bn_eval_for_single_model
 wandb.init(
     project="LN Segmentation",
     config=config_params,
-    name=f"{config_params['model_name']}",
+    name=f"{config_params['model_name']}_fold_3",
     settings=wandb.Settings(start_method='fork')
 )
 
@@ -78,7 +78,7 @@ wandb.log({'# Model Params': total_params})
 flops = FlopCountAnalysis(model, torch.randn(1, 2*num_slices+1, sz, sz))
 wandb.log({'# Model FLOPS': flops.total()})
 # model = model.to(device)
-device_ids = [2, 3]
+device_ids = [1]
 model = DataParallel(model, device_ids=device_ids)
 model.to(f'cuda:{device_ids[0]}', non_blocking=True)
 
@@ -176,11 +176,11 @@ for epoch in range(prev_epoch_num, n_epochs):
 
     best_valid_dice, best_state = save_model(np.mean(val_dice_scores), 
                 best_valid_dice, model_dict, 
-                model_name, 'model_dir', 'dice', 'max')
+                model_name, f"model_dir/fold_{fold}", 'dice', epoch, fold, 'max')
     
     print(ITALIC+"="*70+RESET)
     
-best_state = torch.load(f"model_dir/{model_name}_dice.pth")
+best_state = torch.load(f"model_dir/fold_{fold}/{model_name}_dice_fold_{fold}.pth")
 model.load_state_dict(best_state['model'])
 optim.load_state_dict(best_state['optim'])
 lr_scheduler.load_state_dict(best_state['scheduler'])

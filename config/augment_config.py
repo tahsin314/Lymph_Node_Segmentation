@@ -7,7 +7,7 @@ aug_config = dict(
     train_aug = A.Compose([
   A.ShiftScaleRotate(p=0.9,rotate_limit=30, border_mode= cv2.BORDER_CONSTANT, value=[0, 0, 0], scale_limit=0.25),
     A.OneOf([
-    A.Cutout(p=0.3, max_h_size=int(config_params['sz'])//16, max_w_size=int(config_params['sz'])//16, num_holes=10, fill_value=0),
+    # A.Cutout(p=0.3, max_h_size=int(config_params['sz'])//16, max_w_size=int(config_params['sz'])//16, num_holes=10, fill_value=0),
     # GridMask(num_grid=7, p=0.7, fill_value=0)
     ], p=0.20),
     A.RandomSizedCrop(min_max_height=(int(int(config_params['sz'])*0.7), int(int(config_params['sz'])*0.8)), height=int(config_params['sz']), width=int(config_params['sz']), p=0.5),

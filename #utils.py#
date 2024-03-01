@@ -86,8 +86,8 @@ def model_summary(model, sample_input):
 
 def save_model(valid_metric, best_valid_metric, model_dict, model_name, save_dir, metric_name, epoch, fold, mode= 'max'):
     
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
+    if not os.path.exists(f"{save_dir}_fold_{fold}"):
+        os.makedirs(f"{save_dir}_fold_{fold}")
     mode_dict = {'max' :  'increase', 'min' : 'decrease'}
     if mode == 'max':
         if valid_metric>best_valid_metric:

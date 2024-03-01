@@ -9,8 +9,8 @@ import nrrd
 import pandas as pd
 # from p_tqdm import p_map
 num_slices = 0
-data_dir = "../DATA/lymph_node/ct_221"
-new_data_dir = f"../DATA/lymph_node/ct_221_{num_slices}_npz"
+data_dir = "../../data/lymph_node/ct_221/"
+new_data_dir = f"../../data/lymph_node/ct_221_{num_slices}_npz"
 label_dict = {'patient_id':[], 'slice_num':[], 'label':[]}
 patient_ids = os.listdir(data_dir)
 
