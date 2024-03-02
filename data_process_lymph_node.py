@@ -4,6 +4,7 @@ from config.config import *
 from utils import *
 from tqdm import tqdm as T
 import numpy as np
+import natsort
 import cv2
 import nrrd
 import pandas as pd
@@ -13,6 +14,7 @@ data_dir = "../../data/lymph_node/ct_221/"
 new_data_dir = f"../../data/lymph_node/ct_221_{num_slices}_npz"
 label_dict = {'patient_id':[], 'slice_num':[], 'label':[]}
 patient_ids = os.listdir(data_dir)
+
 
 # for pat_id in T(patient_ids):
 def data_processing(args):
@@ -65,9 +67,11 @@ if __name__ == '__main__':
     df.to_csv(f"{new_data_dir}/labels.csv", index=False)
     gkf = GroupKFold(n_splits=5)
     patient_ids = df.explode('patient_id')['patient_id'].unique().tolist()
-    patient_ids.sort()
+    # patient_ids.sort()                    #sort alphabetically
+    patient_ids = natsort.natsorted(patient_ids)        # sort numerically
     train_pat_ids = patient_ids[:200]
     test_pat_ids = patient_ids[200:]
+    print(f'test_ids:{test_pat_ids}')
     df['path'] = list(map(datapath, df['patient_id'], df['slice_num']))   
     df['path'] = df['path'].map(lambda x: f"{new_data_dir}/{x}")
     train_df = df[df["patient_id"].isin(train_pat_ids)].reset_index(drop=True)

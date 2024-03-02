@@ -36,7 +36,7 @@ from models.utils import turn_on_efficient_conv_bn_eval_for_single_model
 wandb.init(
     project="LN Segmentation",
     config=config_params,
-    name=f"{config_params['model_name']}_fold_3",
+    name=f"{config_params['model_name']}_fold_0",
     settings=wandb.Settings(start_method='fork')
 )
 
@@ -49,7 +49,7 @@ for key, value in config_params.items():
 for key, value in color_config.items():
     if isinstance(value, str):
         exec(f"{key} = '{value}'")
-        
+print(f'######## fold:{fold} #############')
 seed_everything(SEED)
 df = pd.read_csv(f"{data_dir}/train_labels.csv").drop_duplicates()
 train_df = df[(df['fold_patient'] != fold)] 
@@ -78,7 +78,8 @@ wandb.log({'# Model Params': total_params})
 flops = FlopCountAnalysis(model, torch.randn(1, 2*num_slices+1, sz, sz))
 wandb.log({'# Model FLOPS': flops.total()})
 # model = model.to(device)
-device_ids = [1]
+device_ids = [0]
+print(f'device_ids:{device_ids}')
 model = DataParallel(model, device_ids=device_ids)
 model.to(f'cuda:{device_ids[0]}', non_blocking=True)
 
@@ -176,7 +177,7 @@ for epoch in range(prev_epoch_num, n_epochs):
 
     best_valid_dice, best_state = save_model(np.mean(val_dice_scores), 
                 best_valid_dice, model_dict, 
-                model_name, f"model_dir/fold_{fold}", 'dice', epoch, fold, 'max')
+                model_name, f"model_dir_new_test/fold_{fold}", 'dice', epoch, fold, 'max')
     
     print(ITALIC+"="*70+RESET)
     
