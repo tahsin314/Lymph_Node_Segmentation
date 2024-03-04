@@ -33,29 +33,45 @@ from losses.structure_loss import structure_loss, total_structure_loss
 
 from models.utils import turn_on_efficient_conv_bn_eval_for_single_model
 
-wandb.init(
-    project="LN Segmentation",
-    config=config_params,
-    name=f"{config_params['model_name']}_fold_0",
-    settings=wandb.Settings(start_method='fork')
-)
+
 
 for key, value in config_params.items():
     if isinstance(value, str):
         exec(f"{key} = '{value}'")
     else:
         exec(f"{key} = {value}")
+    
+print(f'################### fold:{fold} Training Started ############# \n')
+wandb.init(
+    project="LN Segmentation",
+    config=config_params,
+    name=f"{config_params['model_name']}_fold_{fold}",
+    settings=wandb.Settings(start_method='fork')
+)
 
 for key, value in color_config.items():
     if isinstance(value, str):
         exec(f"{key} = '{value}'")
-print(f'######## fold:{fold} #############')
+
 seed_everything(SEED)
 df = pd.read_csv(f"{data_dir}/train_labels.csv").drop_duplicates()
 train_df = df[(df['fold_patient'] != fold)] 
 valid_df = df[df['fold_patient'] == fold]
 test_df = pd.read_csv(f"{data_dir}/test_labels.csv").drop_duplicates()
 print(len(train_df), len(valid_df), len(test_df))
+
+train_pos = train_df[train_df['label'] == 1] 
+train_neg = train_df[train_df['label'] == 0] 
+
+valid_pos = valid_df[valid_df['label'] == 1] 
+valid_neg = valid_df[valid_df['label'] == 0] 
+
+test_pos = test_df[test_df['label'] == 1] 
+test_neg = test_df[test_df['label'] == 0]
+
+print(f'train:::: pos:{len(train_pos)} neg:{len(train_neg)}')
+print(f'valid:::: pos:{len(valid_pos)} neg:{len(valid_neg)}')
+print(f'test:::: pos:{len(test_pos)} neg:{len(test_neg)}')
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 train_aug = Augmentation()
@@ -78,7 +94,7 @@ wandb.log({'# Model Params': total_params})
 flops = FlopCountAnalysis(model, torch.randn(1, 2*num_slices+1, sz, sz))
 wandb.log({'# Model FLOPS': flops.total()})
 # model = model.to(device)
-device_ids = [0]
+device_ids = [device_id]
 print(f'device_ids:{device_ids}')
 model = DataParallel(model, device_ids=device_ids)
 model.to(f'cuda:{device_ids[0]}', non_blocking=True)
@@ -90,12 +106,12 @@ plist = [
         # {'params': model.head.parameters(),  'lr': lr}
     ]
 optim = Adam(plist, lr=lr)
-lr_scheduler = ReduceLROnPlateau(optim, mode='max', patience=5, factor=0.5, min_lr=1e-6, verbose=True)
+lr_scheduler = ReduceLROnPlateau(optim, mode='max', patience=5, factor=0.5, min_lr=1e-7, verbose=True)
 cyclic_scheduler = CosineAnnealingWarmRestarts(optim, 5*len(data_module.train_dataloader()), 2, lr/20, -1)
 wandb.watch(models=model, criterion=citerion, log='parameters')
 
 if pretrained:
-    best_state = torch.load(f"model_dir/{model_name}_dice.pth")
+    best_state = torch.load(f"{model_dir}/fold_{fold}/{model_name}_dice_fold_{fold}.pth")
     print(f"Best Validation result was found in epoch {best_state['epoch']}\n")
     print(f"Best Validation Recall {best_state['best_recall']}\n")
     print(f"Best Validation Dice {best_state['best_dice']}\n")
@@ -107,7 +123,7 @@ if pretrained:
     model.load_state_dict(best_state['model'])
     optim.load_state_dict(best_state['optim'])
     lr_scheduler.load_state_dict(best_state['scheduler'])
-    cyclic_scheduler.load_state_dict(best_state['cyclic_scheduler'])
+    # cyclic_scheduler.load_state_dict(best_state['cyclic_scheduler'])
 else:
     prev_epoch_num = 0
     best_valid_loss = np.inf
@@ -118,70 +134,75 @@ else:
 early_stop_counter = 0
 train_losses = []
 valid_losses = []
+if not pretrained:
+    for epoch in range(prev_epoch_num, n_epochs):
+        torch.cuda.empty_cache()
+        print(gc.collect())
+    
+        train_loss, train_dice_scores, train_recall_scores, cyclic_scheduler = train_val_class(epoch, data_module.train_dataloader(), 
+                                                model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device_ids, train=True)
+        valid_loss, val_dice_scores, val_recall_scores, _ = train_val_class(epoch, data_module.val_dataloader(), 
+                                                model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device_ids, train=False)
+        # NaN check
+        if valid_loss != valid_loss:
+            print(f'{RED}Mixed Precision{RESET} rendering nan value. Forcing {RED}Mixed Precision{RESET} to be False ...')
+            mixed_precision = False
+            bs = bs//2
+            gradient_accumulation_steps = 2*gradient_accumulation_steps
+            print('Loading last best model ...')
+            try:
+                tmp = torch.load(os.path.join(model_dir, model_name+'_dice_fold_{fold}.pth'))
+                model.load_state_dict(tmp['model'])
+                optim.load_state_dict(tmp['optim'])
+                lr_scheduler.load_state_dict(tmp['scheduler'])
+                # cyclic_scheduler.load_state_dict(tmp['cyclic_scheduler'])
+                del tmp
+            except:
+                model = model_params[config_params['model_name']]
+                model = model.to(device)
+        else:
+            train_losses.append(train_loss)
+            valid_losses.append(valid_loss)
+        
+        # lr_scheduler.step(valid_loss)
+        lr_scheduler.step(np.mean(val_dice_scores))
+        wandb.log({"Train Average DICE": np.mean(train_dice_scores), "Train SD DICE": np.std(train_dice_scores), "Epoch": epoch})
+        wandb.log({"Validation Average DICE": np.mean(val_dice_scores), "Validation SD DICE": np.std(val_dice_scores),"Epoch": epoch})
+        wandb.log({"Train Average Recall": np.mean(train_recall_scores), "Train SD Recall": np.std(train_recall_scores), "Epoch": epoch})
+        wandb.log({"Validation Average Recall": np.mean(val_recall_scores), "Validation SD Recall": np.std(val_recall_scores),"Epoch": epoch})
+        
+        print(ITALIC+"="*70+RESET)
+        print(f"{BOLD}{UNDERLINE}{CYAN}Epoch {epoch} Report:{RESET}")
+        print(f"{MAGENTA}Validation Loss: {valid_loss :.4f} Dice Score: {np.mean(val_dice_scores) :.4f} Recall Score: {np.mean(val_recall_scores) :.4f}{RESET}")
+        model_dict = {'model': model.state_dict(), 
+        'optim': optim.state_dict(), 
+        'scheduler':lr_scheduler.state_dict(), 
+        # 'cyclic_scheduler':cyclic_scheduler.state_dict(), 
+        # 'scaler': scaler.state_dict(),
+        'best_loss':valid_loss, 
+        'best_recall':np.mean(val_recall_scores),
+        'best_dice':np.mean(val_dice_scores),
+        'epoch':epoch}
+        if np.mean(val_dice_scores) < best_valid_dice:
+            early_stop_counter += 1
+            if early_stop_counter == 30:
+                print(f"{RED}No improvement over val recall for so long!{RESET}")
+                print(f"{RED}Early Stopping now!{RESET}")
+                break
+        else: early_stop_counter = 0
+    
+        best_valid_dice, best_state = save_model(np.mean(val_dice_scores), 
+                    best_valid_dice, model_dict, 
+                    model_name, f"{model_dir}/fold_{fold}", 'dice', epoch, fold, 'max')
+        print(f'best dice:{best_valid_dice}, epoch:{epoch} fold:{fold}')
+        
+        print(ITALIC+"="*70+RESET)
 
-for epoch in range(prev_epoch_num, n_epochs):
-    torch.cuda.empty_cache()
-    print(gc.collect())
-
-    train_loss, train_dice_scores, train_recall_scores, cyclic_scheduler = train_val_class(epoch, data_module.train_dataloader(), 
-                                            model, citerion, optim, cyclic_scheduler, mixed_precision=mixed_precision, device_ids=device_ids, train=True)
-    valid_loss, val_dice_scores, val_recall_scores, _ = train_val_class(epoch, data_module.val_dataloader(), 
-                                            model, citerion, optim, cyclic_scheduler, mixed_precision=mixed_precision, device_ids=device_ids, train=False)
-    # NaN check
-    if valid_loss != valid_loss:
-        print(f'{RED}Mixed Precision{RESET} rendering nan value. Forcing {RED}Mixed Precision{RESET} to be False ...')
-        mixed_precision = False
-        bs = bs//2
-        gradient_accumulation_steps = 2*gradient_accumulation_steps
-        print('Loading last best model ...')
-        try:
-            tmp = torch.load(os.path.join(model_dir, model_name+'_dice.pth'))
-            model.load_state_dict(tmp['model'])
-            optim.load_state_dict(tmp['optim'])
-            lr_scheduler.load_state_dict(tmp['scheduler'])
-            cyclic_scheduler.load_state_dict(tmp['cyclic_scheduler'])
-            del tmp
-        except:
-            model = model_params[config_params['model_name']]
-            model = model.to(device)
-    else:
-        train_losses.append(train_loss)
-        valid_losses.append(valid_loss)
-    
-    # lr_scheduler.step(valid_loss)
-    lr_scheduler.step(np.mean(val_dice_scores))
-    wandb.log({"Train Average DICE": np.mean(train_dice_scores), "Train SD DICE": np.std(train_dice_scores), "Epoch": epoch})
-    wandb.log({"Validation Average DICE": np.mean(val_dice_scores), "Validation SD DICE": np.std(val_dice_scores),"Epoch": epoch})
-    wandb.log({"Train Average Recall": np.mean(train_recall_scores), "Train SD Recall": np.std(train_recall_scores), "Epoch": epoch})
-    wandb.log({"Validation Average Recall": np.mean(val_recall_scores), "Validation SD Recall": np.std(val_recall_scores),"Epoch": epoch})
-    
-    print(ITALIC+"="*70+RESET)
-    print(f"{BOLD}{UNDERLINE}{CYAN}Epoch {epoch+1} Report:{RESET}")
-    print(f"{MAGENTA}Validation Loss: {valid_loss :.4f} Dice Score: {np.mean(val_dice_scores) :.4f} Recall Score: {np.mean(val_recall_scores) :.4f}{RESET}")
-    model_dict = {'model': model.state_dict(), 
-    'optim': optim.state_dict(), 
-    'scheduler':lr_scheduler.state_dict(), 
-    'cyclic_scheduler':cyclic_scheduler.state_dict(), 
-    # 'scaler': scaler.state_dict(),
-    'best_loss':valid_loss, 
-    'best_recall':np.mean(val_recall_scores),
-    'best_dice':np.mean(val_dice_scores),
-    'epoch':epoch}
-    if np.mean(val_dice_scores) < best_valid_dice:
-        early_stop_counter += 1
-        if early_stop_counter == 30:
-            print(f"{RED}No improvement over val recall for so long!{RESET}")
-            print(f"{RED}Early Stopping now!{RESET}")
-            break
-    else: early_stop_counter = 0
-
-    best_valid_dice, best_state = save_model(np.mean(val_dice_scores), 
-                best_valid_dice, model_dict, 
-                model_name, f"model_dir_new_test/fold_{fold}", 'dice', epoch, fold, 'max')
-    
-    print(ITALIC+"="*70+RESET)
-    
-best_state = torch.load(f"model_dir/fold_{fold}/{model_name}_dice_fold_{fold}.pth")
+print(f"########### testing: fold:{fold} ##############")
+# Dude, your best model saving way is weird.
+best_model_path = f"{model_dir}/fold_{fold}/{model_name}_dice_fold_{fold}.pth"
+print(f'best model path:{best_model_path}')
+best_state = torch.load(best_model_path)
 model.load_state_dict(best_state['model'])
 optim.load_state_dict(best_state['optim'])
 lr_scheduler.load_state_dict(best_state['scheduler'])
@@ -189,7 +210,8 @@ lr_scheduler.load_state_dict(best_state['scheduler'])
 print(f"{BLUE}Best Validation result was found in epoch {best_state['epoch']}\n{RESET}")
 print(f"{BLUE}Best Validation Recall {best_state['best_recall']}\n{RESET}")
 print(f"{BLUE}Best Validation Dice {best_state['best_dice']}\n{RESET}")
+epoch = 0
 test_loss, test_dice_scores, test_recall_scores, _ = train_val_class(epoch, data_module.test_dataloader(), 
-                                            model, citerion, optim, cyclic_scheduler, mixed_precision=mixed_precision, device_ids=device_ids, train=False)
+                                            model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device_ids, train=False)
 wandb.log({"Test Loss": test_loss, "Test Average DICE": np.mean(test_dice_scores), "Test SD DICE": np.std(test_dice_scores), "Test Average Recall": np.mean(test_recall_scores), "Test SD Recall": np.std(test_recall_scores)})
 wandb.finish()

@@ -28,6 +28,10 @@ def train_val_class(epoch, dataloader, model, criterion, optimizer, cyclic_sched
     recall_scores = []
     scaler = torch.cuda.amp.GradScaler()
     stage = 'train' if train else 'validation'
+    for param_group in optimizer.param_groups:
+        lr = param_group['lr']
+        print('Learning rate: ',lr)
+        wandb.log({"LR":lr, "Epoch": epoch})
 
     model.train() if train else model.eval()
     print(f"{BLUE}Initiating {stage} phase ...{RESET}")
@@ -45,13 +49,13 @@ def train_val_class(epoch, dataloader, model, criterion, optimizer, cyclic_sched
                 if train:
                     if mixed_precision:
                         scaler.scale(loss).backward()
-                        clip_gradient(optimizer, 25)
+                        # clip_gradient(optimizer, 25)
                         scaler.step(optimizer)
                         scaler.update()
                         optimizer.zero_grad()
                     else:
                         loss.backward()
-                        clip_gradient(optimizer, 25)
+                        # clip_gradient(optimizer, 25)
                         optimizer.step()
                         optimizer.zero_grad()
             if cyclic_scheduler is not None: cyclic_scheduler.step()
@@ -63,6 +67,7 @@ def train_val_class(epoch, dataloader, model, criterion, optimizer, cyclic_sched
                 # outputs = (outputs - outputs.min()) / (outputs.max() - outputs.min() + 1e-8)
 
             dice_scores_batch = dice_score_by_data_torch(labels, outputs, threshold = threshold).detach().cpu().numpy()
+            # print(f'dice scores batch: {dice_scores_batch}')
             recall_score_batch = recall(labels, outputs, threshold = threshold).detach().cpu().numpy()
             # print("Recall", (recall_score_batch))
             # Find the index of the image with the lowest loss
@@ -80,9 +85,10 @@ def train_val_class(epoch, dataloader, model, criterion, optimizer, cyclic_sched
                 # print(final_image.shape, row1.shape)
                 wandb.log({f"image_batch {idx}": wandb.Image(final_image)})
             dice_scores.extend(dice_scores_batch)
+            # print(f'dice scores: {dice_scores}')
             recall_scores.extend(recall_score_batch)
             current_loss = running_loss / epoch_samples
-            msg = f'{ITALIC}{PURPLE}Epoch: {epoch+1} Progress: [{idx}/{len(dataloader)}] loss: {current_loss:.4f} Time: {elapsed}s ETA: {eta} s{RESET}' if train else f'{ITALIC}{RED}Epoch {epoch+1} Progress: [{idx}/{len(dataloader)}] loss: {current_loss:.4f} Time: {elapsed}s ETA: {eta} s{RESET}'
+            msg = f'{ITALIC}{PURPLE}Epoch: {epoch} Progress: [{idx}/{len(dataloader)}] loss: {current_loss:.4f} Time: {elapsed}s ETA: {eta} s{RESET}' if train else f'{ITALIC}{RED}Epoch {epoch+1} Progress: [{idx}/{len(dataloader)}] loss: {current_loss:.4f} Time: {elapsed}s ETA: {eta} s{RESET}'
             wandb.log({"Train Loss" if train else "Validation Loss": current_loss, "Epoch": epoch})
             print(msg, end='\r')
     print(f'{stage} Loss: {running_loss/epoch_samples:.4f}')
