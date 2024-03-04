@@ -196,7 +196,7 @@ cyclic_scheduler = CosineAnnealingWarmRestarts(optim, 5*len(data_module.train_da
 wandb.watch(models=model, criterion=citerion, log='parameters')
 
 if resume_path:
-    best_state = torch.load(f"{model_dir}/fold_{fold}/{resume_path}")
+    best_state = torch.load(f"{model_dir}/fold_{fold}/{resume_path}", map_location=device)
     print(f"Best Validation result was found in epoch {best_state['epoch']}\n")
     print(f"Best Validation Recall {best_state['best_recall']}\n")
     print(f"Best Validation Dice {best_state['best_dice']}\n")
