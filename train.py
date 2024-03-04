@@ -78,10 +78,16 @@ parser.add_argument("--pretrained", action="store_true", default=False,
                     help="Enable using a pre-trained model.")
 parser.add_argument("--mixed_precision", action="store_true", default=False,
                     help="Enable mixed precision training (requires compatible hardware).")
-
+parser.add_argument("--resume_path", type=str, default=None,
+                    help="Mode of data sampling (e.g., 'upsampling').")
+parser.add_argument("--test", action="store_true", default=False,
+                    help="Enable using a pre-trained model.")
 args = parser.parse_args()
 
-
+# Create a custom dictionary
+config_params = {}
+for attr in vars(args):
+  config_params[attr] = getattr(args, attr)
 
 # for key, value in config_params.items():
 #     if isinstance(value, str):
@@ -109,13 +115,15 @@ SEED = args.SEED
 sampling_mode = args.sampling_mode
 pretrained = args.pretrained
 mixed_precision = args.mixed_precision
+resume_path = args.resume_path
+test = args.test
 
 config = vars(args)
 wandb_config = {k: v for k, v in config.items() if k in wandb.sdk.wandb_sdk.INIT_OPTIONS}
 print(f'################### Fold:{fold} Training Started ############# \n')
 wandb.init(
     project="LN Segmentation",
-    config=wandb_config,
+    config=config_params,
     name=f"{model_name}_fold_{fold}",
     settings=wandb.Settings(start_method='fork')
 )
@@ -181,8 +189,8 @@ lr_scheduler = ReduceLROnPlateau(optim, mode='max', patience=5, factor=0.5, min_
 cyclic_scheduler = CosineAnnealingWarmRestarts(optim, 5*len(data_module.train_dataloader()), 2, lr/20, -1)
 wandb.watch(models=model, criterion=citerion, log='parameters')
 
-if pretrained:
-    best_state = torch.load(f"{model_dir}/fold_{fold}/{model_name}_dice_fold_{fold}.pth")
+if resume_path:
+    best_state = torch.load(f"{model_dir}/fold_{fold}/{resume_path}")
     print(f"Best Validation result was found in epoch {best_state['epoch']}\n")
     print(f"Best Validation Recall {best_state['best_recall']}\n")
     print(f"Best Validation Dice {best_state['best_dice']}\n")
@@ -205,7 +213,7 @@ else:
 early_stop_counter = 0
 train_losses = []
 valid_losses = []
-if not pretrained:
+if not test:
     for epoch in range(prev_epoch_num, n_epochs):
         torch.cuda.empty_cache()
         print(gc.collect())
