@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=python_train
-#SBATCH --output=/blue/r.forghani/scripts/mshead_3d/results/job.%J.out
-#SBATCH --error=/blue/r.forghani/scripts/mshead_3d/results/job.%J.err
+#SBATCH --output=/blue/r.forghani/scripts/Lymph_Node_Segmentation/results/job.%J.out
+#SBATCH --error=/blue/r.forghani/scripts/Lymph_Node_Segmentation/results/job.%J.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=mdmahfuzalhasan@ufl.edu
 #SBATCH --nodes=1
@@ -11,6 +11,8 @@
 #SBATCH --partition=hpg-ai
 #SBATCH --gpus=a100:1
 #SBATCH --time=15:00:00
+#SBATCH --account=r.forghani
+#SBATCH --qos=r.forghani
 
 module purge
 module load conda

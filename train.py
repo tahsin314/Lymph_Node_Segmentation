@@ -119,7 +119,7 @@ resume_path = args.resume_path
 test = args.test
 
 config = vars(args)
-wandb_config = {k: v for k, v in config.items() if k in wandb.sdk.wandb_sdk.INIT_OPTIONS}
+# wandb_config = {k: v for k, v in config.items() if k in wandb.sdk.wandb_sdk.INIT_OPTIONS}
 print(f'################### Fold:{fold} Training Started ############# \n')
 wandb.init(
     project="LN Segmentation",
@@ -205,7 +205,15 @@ if resume_path:
     best_valid_loss = best_state['best_loss']
     best_valid_recall = best_state['best_recall']
     best_valid_dice = best_state['best_dice']
-    model.load_state_dict(best_state['model'])
+    # model.load_state_dict(best_state['model'])
+    if list(best_state['model'].keys())[0].startswith('module.'):
+        # Create a new state dict without the "module." prefix
+        new_state_dict = {k.replace('module.', ''): v for k, v in best_state['model'].items()}
+    else:
+        new_state_dict = best_state['model']
+ 
+    # Load the adjusted state dict into your model
+    model.load_state_dict(new_state_dict)
     optim.load_state_dict(best_state['optim'])
     lr_scheduler.load_state_dict(best_state['scheduler'])
     # cyclic_scheduler.load_state_dict(best_state['cyclic_scheduler'])
