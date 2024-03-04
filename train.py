@@ -48,7 +48,7 @@ parser.add_argument("--n_fold", type=int, default=5,
                     help="Number of folds for cross-validation.")
 parser.add_argument("--fold", type=int, default=3,
                     help="Fold index for cross-validation (0-indexed).")
-parser.add_argument("--device_id", type=int, default=3,
+parser.add_argument("--device_id", type=int, default=0,
                     help="ID of the GPU device to use for training.")
 parser.add_argument("--sz", type=int, default=384,
                     help="Input image size.")
@@ -152,7 +152,7 @@ print(f'train:::: pos:{len(train_pos)} neg:{len(train_neg)}')
 print(f'valid:::: pos:{len(valid_pos)} neg:{len(valid_neg)}')
 print(f'test:::: pos:{len(test_pos)} neg:{len(test_neg)}')
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+# device = 'cuda' if torch.cuda.is_available() else 'cpu'
 train_aug = Augmentation()
 train_ds = LNDataset(train_df.path.values, train_df.label.values, dim=sz,
   transforms=train_aug)
@@ -173,10 +173,16 @@ wandb.log({'# Model Params': total_params})
 flops = FlopCountAnalysis(model, torch.randn(1, 2*num_slices+1, sz, sz))
 wandb.log({'# Model FLOPS': flops.total()})
 # model = model.to(device)
-device_ids = [device_id]
-print(f'device_ids:{device_ids}')
-model = DataParallel(model, device_ids=device_ids)
-model.to(f'cuda:{device_ids[0]}', non_blocking=True)
+# device_ids = [device_id]
+# print(f'device_ids:{device_ids}')
+# model = DataParallel(model, device_ids=device_ids)
+# model.to(f'cuda:{device_ids[0]}', non_blocking=True)
+
+
+## Load Networks
+device = torch.device("cuda")
+print(f'--- device:{device} ---')
+model.to(device)
 
 # citerion = BinaryDiceLoss(reduction='mean')
 citerion = FocusNetLoss
@@ -219,9 +225,9 @@ if not test:
         print(gc.collect())
     
         train_loss, train_dice_scores, train_recall_scores, cyclic_scheduler = train_val_class(args, epoch, data_module.train_dataloader(), 
-                                                model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device_ids, train=True)
+                                                model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device, train=True)
         valid_loss, val_dice_scores, val_recall_scores, _ = train_val_class(args, epoch, data_module.val_dataloader(), 
-                                                model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device_ids, train=False)
+                                                model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device, train=False)
         # NaN check
         if valid_loss != valid_loss:
             print(f'{RED}Mixed Precision{RESET} rendering nan value. Forcing {RED}Mixed Precision{RESET} to be False ...')
@@ -291,6 +297,6 @@ print(f"{BLUE}Best Validation Recall {best_state['best_recall']}\n{RESET}")
 print(f"{BLUE}Best Validation Dice {best_state['best_dice']}\n{RESET}")
 epoch = 0
 test_loss, test_dice_scores, test_recall_scores, _ = train_val_class(args, epoch, data_module.test_dataloader(), 
-                                            model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device_ids, train=False)
+                                            model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device, train=False)
 wandb.log({"Test Loss": test_loss, "Test Average DICE": np.mean(test_dice_scores), "Test SD DICE": np.std(test_dice_scores), "Test Average Recall": np.mean(test_recall_scores), "Test SD Recall": np.std(test_recall_scores)})
 wandb.finish()
