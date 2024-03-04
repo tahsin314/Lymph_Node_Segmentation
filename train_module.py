@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import wandb
 
-from config.config import config_params
+# from config.config import config_params
 from config.color_config import color_config
 from utils import clip_gradient, visualizer
 
@@ -14,13 +14,13 @@ for key, value in color_config.items():
     if isinstance(value, str):
         exec(f"{key} = '{value}'")
 
-for key, value in config_params.items():
-    if isinstance(value, str):
-        exec(f"{key} = '{value}'")
-    else:
-        exec(f"{key} = {value}")
+# for key, value in config_params.items():
+#     if isinstance(value, str):
+#         exec(f"{key} = '{value}'")
+#     else:
+#         exec(f"{key} = {value}")
 
-def train_val_class(epoch, dataloader, model, criterion, optimizer, cyclic_scheduler, mixed_precision=False, device_ids=[0], train=True):
+def train_val_class(args, epoch, dataloader, model, criterion, optimizer, cyclic_scheduler, mixed_precision=False, device_ids=[0], train=True):
     t1 = time.time()
     running_loss = 0
     epoch_samples = 0
@@ -66,9 +66,9 @@ def train_val_class(epoch, dataloader, model, criterion, optimizer, cyclic_sched
                 # print(torch.max(outputs), torch.min(outputs))
                 # outputs = (outputs - outputs.min()) / (outputs.max() - outputs.min() + 1e-8)
 
-            dice_scores_batch = dice_score_by_data_torch(labels, outputs, threshold = threshold).detach().cpu().numpy()
+            dice_scores_batch = dice_score_by_data_torch(labels, outputs, threshold = args.threshold).detach().cpu().numpy()
             # print(f'dice scores batch: {dice_scores_batch}')
-            recall_score_batch = recall(labels, outputs, threshold = threshold).detach().cpu().numpy()
+            recall_score_batch = recall(labels, outputs, threshold = args.threshold).detach().cpu().numpy()
             # print("Recall", (recall_score_batch))
             # Find the index of the image with the lowest loss
             min_recall_index = np.argmin(recall_score_batch)
@@ -78,9 +78,9 @@ def train_val_class(epoch, dataloader, model, criterion, optimizer, cyclic_sched
             average_recall = np.mean(recall_score_batch)
             closest_to_average_index = np.argmin(np.abs(recall_score_batch - average_recall))
             if not train:
-                row1 = visualizer(data[:, num_slices, :, :], outputs, labels, min_recall_index, recall_score_batch)
-                row2 = visualizer(data[:, num_slices, :, :], outputs, labels, closest_to_average_index, recall_score_batch)
-                row3 = visualizer(data[:, num_slices, :, :], outputs, labels, max_recall_index, recall_score_batch)
+                row1 = visualizer(data[:, args.num_slices, :, :], outputs, labels, min_recall_index, recall_score_batch)
+                row2 = visualizer(data[:, args.num_slices, :, :], outputs, labels, closest_to_average_index, recall_score_batch)
+                row3 = visualizer(data[:, args.num_slices, :, :], outputs, labels, max_recall_index, recall_score_batch)
                 final_image = np.vstack([row1, row2, row3])
                 # print(final_image.shape, row1.shape)
                 wandb.log({f"image_batch {idx}": wandb.Image(final_image)})

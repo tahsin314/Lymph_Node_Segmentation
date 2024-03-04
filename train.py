@@ -1,3 +1,4 @@
+import argparse
 import os
 # os.environ["CUDA_VISIBLE_DEVICES"]="2"
 import gc
@@ -16,7 +17,7 @@ import wandb
 from Datasets.CloudDataset import CloudDataset
 from Datasets.DataModule import DataModule
 
-from config.config import config_params
+# from config.config import config_params
 from config.model_config import model_params
 from config.augment_config import aug_config
 from config.color_config import color_config
@@ -31,21 +32,91 @@ from losses.focusnetloss import FocusNetLoss
 from losses.hybrid import hybrid_loss
 from losses.structure_loss import structure_loss, total_structure_loss
 
-from models.utils import turn_on_efficient_conv_bn_eval_for_single_model
+
+parser = argparse.ArgumentParser(description='Lymph Node Segmentation Training')
+
+parser = argparse.ArgumentParser(description="Configuration parameters for the training script.")
+
+# Define arguments with descriptions, types, and default values
+parser.add_argument("--data_dir", type=str, default="../../data/lymph_node/ct_221_0_npz",
+                    help="Path to the directory containing the training data.")
+parser.add_argument("--model_dir", type=str, default="model_dir_static_lr",
+                    help="Directory to save the trained model.")
+parser.add_argument("--model_name", type=str, default="SNet",
+                    help="Name of the model architecture to use.")
+parser.add_argument("--n_fold", type=int, default=5,
+                    help="Number of folds for cross-validation.")
+parser.add_argument("--fold", type=int, default=3,
+                    help="Fold index for cross-validation (0-indexed).")
+parser.add_argument("--device_id", type=int, default=3,
+                    help="ID of the GPU device to use for training.")
+parser.add_argument("--sz", type=int, default=384,
+                    help="Input image size.")
+parser.add_argument("--num_slices", type=int, default=0,
+                    help="Number of slices to use from the 3D volume (0 for all).")
+parser.add_argument("--threshold", type=float, default=0.5,
+                    help="Threshold for binary classification.")
+parser.add_argument("--dataset", type=str, default="LN Segmentation",
+                    help="Name of the dataset to train on.")
+parser.add_argument("--lr", type=float, default=5e-5,
+                    help="Learning rate for the optimizer.")
+parser.add_argument("--eps", type=float, default=1e-5,
+                    help="Epsilon value for numerical stability.")
+parser.add_argument("--weight_decay", type=float, default=1e-5,
+                    help="Weight decay parameter for L2 regularization.")
+parser.add_argument("--n_epochs", type=int, default=100,
+                    help="Number of epochs to train the model.")
+parser.add_argument("--bs", type=int, default=16,
+                    help="Batch size for training.")
+parser.add_argument("--gradient_accumulation_steps", type=int, default=1,
+                    help="Number of steps to accumulate gradients before updating the optimizer.")
+parser.add_argument("--SEED", type=int, default=2023,
+                    help="Random seed for reproducibility.")
+parser.add_argument("--sampling_mode", type=str, default=None,
+                    help="Mode of data sampling (e.g., 'upsampling').")
+parser.add_argument("--pretrained", action="store_true", default=False,
+                    help="Enable using a pre-trained model.")
+parser.add_argument("--mixed_precision", action="store_true", default=False,
+                    help="Enable mixed precision training (requires compatible hardware).")
+
+args = parser.parse_args()
 
 
 
-for key, value in config_params.items():
-    if isinstance(value, str):
-        exec(f"{key} = '{value}'")
-    else:
-        exec(f"{key} = {value}")
-    
-print(f'################### fold:{fold} Training Started ############# \n')
+# for key, value in config_params.items():
+#     if isinstance(value, str):
+#         exec(f"{key} = '{value}'")
+#     else:
+#         exec(f"{key} = {value}")
+
+data_dir = args.data_dir
+model_dir = args.model_dir
+model_name = args.model_name
+n_fold = args.n_fold
+fold = args.fold
+device_id = args.device_id
+sz = args.sz
+num_slices = args.num_slices
+threshold = args.threshold
+dataset = args.dataset
+lr = args.lr
+eps = args.eps
+weight_decay = args.weight_decay
+n_epochs = args.n_epochs
+bs = args.bs
+gradient_accumulation_steps = args.gradient_accumulation_steps
+SEED = args.SEED
+sampling_mode = args.sampling_mode
+pretrained = args.pretrained
+mixed_precision = args.mixed_precision
+
+config = vars(args)
+wandb_config = {k: v for k, v in config.items() if k in wandb.sdk.wandb_sdk.INIT_OPTIONS}
+print(f'################### Fold:{fold} Training Started ############# \n')
 wandb.init(
     project="LN Segmentation",
-    config=config_params,
-    name=f"{config_params['model_name']}_fold_{fold}",
+    config=wandb_config,
+    name=f"{model_name}_fold_{fold}",
     settings=wandb.Settings(start_method='fork')
 )
 
@@ -87,7 +158,7 @@ sampler = DynamicBalanceClassSampler(labels = train_ds.get_labels(), exp_lambda 
 # data = CloudDataset(base_path=data_dir)
 # train_ds, valid_ds, test_ds = torch.utils.data.random_split(data, (4000, 2400, 2000))
 data_module = DataModule(train_ds, valid_ds, test_ds, batch_size=bs, sampler = sampler)
-model = model_params[config_params['model_name']]
+model = model_params[model_name]
 # turn_on_efficient_conv_bn_eval_for_single_model(model)
 total_params = sum(p.numel() for p in model.parameters())
 wandb.log({'# Model Params': total_params})
@@ -139,9 +210,9 @@ if not pretrained:
         torch.cuda.empty_cache()
         print(gc.collect())
     
-        train_loss, train_dice_scores, train_recall_scores, cyclic_scheduler = train_val_class(epoch, data_module.train_dataloader(), 
+        train_loss, train_dice_scores, train_recall_scores, cyclic_scheduler = train_val_class(args, epoch, data_module.train_dataloader(), 
                                                 model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device_ids, train=True)
-        valid_loss, val_dice_scores, val_recall_scores, _ = train_val_class(epoch, data_module.val_dataloader(), 
+        valid_loss, val_dice_scores, val_recall_scores, _ = train_val_class(args, epoch, data_module.val_dataloader(), 
                                                 model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device_ids, train=False)
         # NaN check
         if valid_loss != valid_loss:
@@ -158,7 +229,7 @@ if not pretrained:
                 # cyclic_scheduler.load_state_dict(tmp['cyclic_scheduler'])
                 del tmp
             except:
-                model = model_params[config_params['model_name']]
+                model = model_params[model_name]
                 model = model.to(device)
         else:
             train_losses.append(train_loss)
@@ -198,7 +269,7 @@ if not pretrained:
         
         print(ITALIC+"="*70+RESET)
 
-print(f"########### testing: fold:{fold} ##############")
+print(f"########### Testing: fold:{fold} ##############")
 # Dude, your best model saving way is weird.
 best_model_path = f"{model_dir}/fold_{fold}/{model_name}_dice_fold_{fold}.pth"
 print(f'best model path:{best_model_path}')
@@ -211,7 +282,7 @@ print(f"{BLUE}Best Validation result was found in epoch {best_state['epoch']}\n{
 print(f"{BLUE}Best Validation Recall {best_state['best_recall']}\n{RESET}")
 print(f"{BLUE}Best Validation Dice {best_state['best_dice']}\n{RESET}")
 epoch = 0
-test_loss, test_dice_scores, test_recall_scores, _ = train_val_class(epoch, data_module.test_dataloader(), 
+test_loss, test_dice_scores, test_recall_scores, _ = train_val_class(args, epoch, data_module.test_dataloader(), 
                                             model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device_ids, train=False)
 wandb.log({"Test Loss": test_loss, "Test Average DICE": np.mean(test_dice_scores), "Test SD DICE": np.std(test_dice_scores), "Test Average Recall": np.mean(test_recall_scores), "Test SD Recall": np.std(test_recall_scores)})
 wandb.finish()
