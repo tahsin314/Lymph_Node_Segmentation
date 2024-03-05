@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=python_train
+#SBATCH --job-name=python_train_LN
 #SBATCH --output=/blue/r.forghani/mdmahfuzalhasan/Lymph_Node_Segmentation/results/job.%J.out
 #SBATCH --error=/blue/r.forghani/mdmahfuzalhasan/Lymph_Node_Segmentation/results/job.%J.err
 #SBATCH --mail-type=ALL

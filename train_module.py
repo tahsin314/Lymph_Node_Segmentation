@@ -87,6 +87,7 @@ def train_val_class(args, epoch, dataloader, model, criterion, optimizer, cyclic
             current_loss = running_loss / epoch_samples
             msg = f'{ITALIC}{PURPLE}Epoch: {epoch} Progress: [{idx}/{len(dataloader)}] loss: {current_loss:.4f} Time: {elapsed}s ETA: {eta} s{RESET}' if train else f'{ITALIC}{RED}Epoch {epoch+1} Progress: [{idx}/{len(dataloader)}] loss: {current_loss:.4f} Time: {elapsed}s ETA: {eta} s{RESET}'
             wandb.log({"Train Loss" if train else "Validation Loss": current_loss, "Epoch": epoch})
-            print(msg, end='\r')
+            if idx%200==0:
+                print(msg, end='\r')
     print(f'{stage} Loss: {running_loss/epoch_samples:.4f}')
     return running_loss / epoch_samples, dice_scores, recall_scores, cyclic_scheduler
