@@ -1,0 +1,81 @@
+nohup: ignoring input
+model.safetensors:   0%|          | 0.00/181M [00:00<?, ?B/s]model.safetensors:  12%|█▏        | 21.0M/181M [00:00<00:01, 143MB/s]model.safetensors:  29%|██▉       | 52.4M/181M [00:00<00:00, 187MB/s]model.safetensors:  46%|████▌     | 83.9M/181M [00:00<00:00, 200MB/s]model.safetensors:  64%|██████▎   | 115M/181M [00:00<00:00, 204MB/s] model.safetensors:  81%|████████  | 147M/181M [00:00<00:00, 208MB/s]model.safetensors:  92%|█████████▏| 168M/181M [00:00<00:00, 204MB/s]model.safetensors: 100%|██████████| 181M/181M [00:00<00:00, 200MB/s]
+wandb: Currently logged in as: tahsin (vqa_tawsif). Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.16.3
+wandb: Run data is saved locally in /blue/r.forghani/scripts/Lymph_Node_Segmentation/wandb/run-20240305_050739-mqnlm703
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run SNet_fold_2
+wandb: ⭐️ View project at https://wandb.ai/vqa_tawsif/LN%20Segmentation
+wandb: 🚀 View run at https://wandb.ai/vqa_tawsif/LN%20Segmentation/runs/mqnlm703
+Unsupported operator aten::add_ encountered 45 time(s)
+Unsupported operator aten::sigmoid encountered 15 time(s)
+Unsupported operator aten::mul encountered 21 time(s)
+Unsupported operator aten::max_pool2d encountered 2 time(s)
+Unsupported operator aten::add encountered 8 time(s)
+Unsupported operator aten::prelu encountered 6 time(s)
+The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+conv1x.conv2.shortcut, conv2x.1.conv.shortcut, conv4x.1.conv.shortcut, conv4xd2.0.conv.shortcut, conv4xd2.1.conv.shortcut
+wandb: - 20.958 MB of 20.958 MB uploadedwandb: \ 20.958 MB of 20.958 MB uploadedwandb: | 20.958 MB of 20.958 MB uploadedwandb: / 20.958 MB of 20.958 MB uploadedwandb: - 20.958 MB of 20.958 MB uploadedwandb: \ 21.060 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: | 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: / 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: - 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: \ 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: | 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: / 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: - 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: \ 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: | 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: / 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: - 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: \ 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: | 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: / 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: - 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: \ 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: | 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: / 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: - 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: \ 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: | 21.093 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: / 21.096 MB of 21.096 MB uploaded (0.002 MB deduped)wandb: 
+wandb: Run history:
+wandb:             # Model FLOPS ▁
+wandb:            # Model Params ▁
+wandb:                     Epoch ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█████████████████
+wandb:                        LR ▁▁▁▁
+wandb:        Train Average DICE ▁
+wandb:      Train Average Recall ▁
+wandb:                Train Loss █▇▇▆▆▅▅▅▅▅▄▄▄▄▄▄▃▃▃▃▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:             Train SD DICE ▁
+wandb:           Train SD Recall ▁
+wandb:   Validation Average DICE ▁
+wandb: Validation Average Recall ▁
+wandb:           Validation Loss ▆█▃▂▄▃▃▄▃▂▁▁▁▁▁▂▂▃▄▃▃▃▂▃▂▂▁▂▂▁▁▂▂▃▃▃▃▃▃▃
+wandb:        Validation SD DICE ▁
+wandb:      Validation SD Recall ▁
+wandb: 
+wandb: Run summary:
+wandb:             # Model FLOPS 47885218048
+wandb:            # Model Params 1109693
+wandb:                     Epoch 1
+wandb:                        LR 0.0001
+wandb:        Train Average DICE 0.26581
+wandb:      Train Average Recall 0.85654
+wandb:                Train Loss 1.3321
+wandb:             Train SD DICE 0.42989
+wandb:           Train SD Recall 0.3286
+wandb:   Validation Average DICE 0.70869
+wandb: Validation Average Recall 0.77147
+wandb:           Validation Loss 1.30645
+wandb:        Validation SD DICE 0.42971
+wandb:      Validation SD Recall 0.39606
+wandb: 
+wandb: 🚀 View run SNet_fold_2 at: https://wandb.ai/vqa_tawsif/LN%20Segmentation/runs/mqnlm703
+wandb: ️⚡ View job at https://wandb.ai/vqa_tawsif/LN%20Segmentation/jobs/QXJ0aWZhY3RDb2xsZWN0aW9uOjE0NDkzMDYxOA==/version_details/v22
+wandb: Synced 6 W&B file(s), 94 media file(s), 2 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20240305_050739-mqnlm703/logs
+Traceback (most recent call last):
+  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 1132, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+  File "/blue/r.forghani/envs/medical/lib/python3.8/queue.py", line 179, in get
+    self.not_empty.wait(remaining)
+  File "/blue/r.forghani/envs/medical/lib/python3.8/threading.py", line 306, in wait
+    gotit = waiter.acquire(True, timeout)
+  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/torch/utils/data/_utils/signal_handling.py", line 66, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 1548493) is killed by signal: Bus error. It is possible that dataloader's workers are out of shared memory. Please try to raise your shared memory limit.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "train.py", line 207, in <module>
+    valid_loss, val_dice_scores, val_recall_scores, _ = train_val_class(args, epoch, data_module.val_dataloader(),
+  File "/blue/r.forghani/scripts/Lymph_Node_Segmentation/train_module.py", line 33, in train_val_class
+    for idx, (data, labels) in enumerate(dataloader):
+  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 630, in __next__
+    data = self._next_data()
+  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 1328, in _next_data
+    idx, data = self._get_data()
+  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 1284, in _get_data
+    success, data = self._try_get_data()
+  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/torch/utils/data/dataloader.py", line 1145, in _try_get_data
+    raise RuntimeError(f'DataLoader worker (pid(s) {pids_str}) exited unexpectedly') from e
+RuntimeError: DataLoader worker (pid(s) 1548493) exited unexpectedly
