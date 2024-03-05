@@ -23,6 +23,7 @@ from config.augment_config import aug_config
 from config.color_config import color_config
 from augmentation import Augmentation
 from Datasets.LNDataset import LNDataset
+from torch.utils.data import WeightedRandomSampler
 from catalyst.data.sampler import DynamicBalanceClassSampler
 from train_module import train_val_class
 from utils import save_model, seed_everything
@@ -141,9 +142,17 @@ valid_ds = LNDataset(valid_df.path.values, valid_df.label.values, dim=sz,
 
 test_ds = LNDataset(test_df.path.values, test_df.label.values, dim=sz,
   transforms=None)
+
+class_counts = df['label'].value_counts().sort_index()
+total_samples = float(class_counts.sum())
+class_weights = [total_samples / count for count in class_counts]
+# Create weighted sampler
+labels = df['label'].tolist()
+weights = [class_weights[label] for label in labels]
+weighted_sampler = WeightedRandomSampler(weights, len(weights))
 sampler = DynamicBalanceClassSampler(labels = train_ds.get_labels(), exp_lambda = 0.95, start_epoch= 5, mode = 'downsampling')
 
-data_module = DataModule(train_ds, valid_ds, test_ds, batch_size=bs, sampler = sampler, num_workers=num_workers)
+data_module = DataModule(train_ds, valid_ds, test_ds, batch_size=bs, sampler = weighted_sampler, num_workers=num_workers)
 model = model_params[model_name]
 
 total_params = sum(p.numel() for p in model.parameters())
