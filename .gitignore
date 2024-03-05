@@ -12,3 +12,4 @@ nohup*
 results
 core*
 core.python*
+*.log
