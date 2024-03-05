@@ -41,7 +41,7 @@ parser = argparse.ArgumentParser(description="Configuration parameters for the t
 # Define arguments with descriptions, types, and default values
 parser.add_argument("--data_dir", type=str, default="../../data/lymph_node/ct_221_0_npz",
                     help="Path to the directory containing the training data.")
-parser.add_argument("--model_dir", type=str, default="model_dir_static_lr",
+parser.add_argument("--model_dir", type=str, default="model_dir_Weighted_Sam",
                     help="Directory to save the trained model.")
 parser.add_argument("--model_name", type=str, default="SNet",
                     help="Name of the model architecture to use.")
@@ -83,7 +83,7 @@ parser.add_argument("--resume_path", type=str, default=None,
                     help="Mode of data sampling (e.g., 'upsampling').")
 parser.add_argument("--test", action="store_true", default=False,
                     help="Enable using a pre-trained model.")
-parser.add_argument("--num_workers", type=int, default=2,
+parser.add_argument("--num_workers", type=int, default=8,
                     help="Number of workers for dataloader")
 args = parser.parse_args()
 
@@ -167,7 +167,7 @@ wandb.log({'# Model FLOPS': flops.total()})
 
 
 # Load Networks
-device = torch.device(f"cuda:{device_id}")
+device = torch.device(f"cuda")
 print(f'--- Device ID:{device} ---')
 model.to(device)
 
