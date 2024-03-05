@@ -31,7 +31,6 @@ from losses.tversky import tversky_loss, focal_tversky
 from losses.dice import dice_loss, dice_lossv2
 from losses.focusnetloss import FocusNetLoss
 from losses.hybrid import hybrid_loss
-from losses.structure_loss import structure_loss, total_structure_loss
 
 
 parser = argparse.ArgumentParser(description='Lymph Node Segmentation Training')
