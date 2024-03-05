@@ -1,52 +1,0 @@
-nohup: ignoring input
-model.safetensors:   0%|          | 0.00/181M [00:00<?, ?B/s]model.safetensors:   6%|▌         | 10.5M/181M [00:00<00:03, 50.8MB/s]model.safetensors:  17%|█▋        | 31.5M/181M [00:00<00:01, 101MB/s] model.safetensors:  35%|███▍      | 62.9M/181M [00:00<00:00, 149MB/s]model.safetensors:  52%|█████▏    | 94.4M/181M [00:00<00:00, 172MB/s]model.safetensors:  64%|██████▎   | 115M/181M [00:00<00:00, 182MB/s] model.safetensors:  75%|███████▌  | 136M/181M [00:00<00:00, 190MB/s]model.safetensors:  92%|█████████▏| 168M/181M [00:00<00:00, 198MB/s]model.safetensors: 100%|██████████| 181M/181M [00:01<00:00, 172MB/s]Traceback (most recent call last):
-  File "/blue/r.forghani/envs/medical/lib/python3.8/runpy.py", line 194, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/blue/r.forghani/envs/medical/lib/python3.8/runpy.py", line 87, in _run_code
-    exec(code, run_globals)
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/wandb/__main__.py", line 1, in <module>
-    from wandb.cli import cli
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/wandb/cli/cli.py", line 62, in <module>
-    logging.basicConfig(
-  File "/blue/r.forghani/envs/medical/lib/python3.8/logging/__init__.py", line 1988, in basicConfig
-    h = FileHandler(filename, mode)
-  File "/blue/r.forghani/envs/medical/lib/python3.8/logging/__init__.py", line 1147, in __init__
-    StreamHandler.__init__(self, self._open())
-  File "/blue/r.forghani/envs/medical/lib/python3.8/logging/__init__.py", line 1176, in _open
-    return open(self.baseFilename, self.mode, encoding=self.encoding)
-PermissionError: [Errno 13] Permission denied: '/blue/r.forghani/scripts/Lymph_Node_Segmentation/wandb/debug-cli.mdmahfuzalhasan.log'
-
-Traceback (most recent call last):
-  File "train.py", line 103, in <module>
-    wandb.init(
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/wandb/sdk/wandb_init.py", line 1195, in init
-    raise e
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/wandb/sdk/wandb_init.py", line 1172, in init
-    wi.setup(kwargs)
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/wandb/sdk/wandb_init.py", line 189, in setup
-    self._wl = wandb_setup.setup(settings=setup_settings)
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/wandb/sdk/wandb_setup.py", line 327, in setup
-    ret = _setup(settings=settings)
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/wandb/sdk/wandb_setup.py", line 320, in _setup
-    wl = _WandbSetup(settings=settings)
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/wandb/sdk/wandb_setup.py", line 303, in __init__
-    _WandbSetup._instance = _WandbSetup__WandbSetup(settings=settings, pid=pid)
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/wandb/sdk/wandb_setup.py", line 114, in __init__
-    self._setup()
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/wandb/sdk/wandb_setup.py", line 250, in _setup
-    self._setup_manager()
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/wandb/sdk/wandb_setup.py", line 277, in _setup_manager
-    self._manager = wandb_manager._Manager(settings=self._settings)
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/wandb/sdk/wandb_manager.py", line 139, in __init__
-    self._service.start()
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/wandb/sdk/service/service.py", line 245, in start
-    self._launch_server()
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/wandb/sdk/service/service.py", line 239, in _launch_server
-    _sentry.reraise(e)
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/wandb/analytics/sentry.py", line 154, in reraise
-    raise exc.with_traceback(sys.exc_info()[2])
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/wandb/sdk/service/service.py", line 237, in _launch_server
-    self._wait_for_ports(fname, proc=internal_proc)
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/wandb/sdk/service/service.py", line 108, in _wait_for_ports
-    raise ServiceStartProcessError(
-wandb.sdk.service.service.ServiceStartProcessError: The wandb service process exited with 1. Ensure that `sys.executable` is a valid python interpreter. You can override it with the `_executable` setting or with the `WANDB__EXECUTABLE` environment variable.
