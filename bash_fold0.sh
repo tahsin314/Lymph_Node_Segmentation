@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=python_train
-#SBATCH --output=/blue/r.forghani/mdmahfuzalhasan/scripts/Lymph_Node_Segmentation/results/job.%J.out
-#SBATCH --error=/blue/r.forghani/mdmahfuzalhasan/scripts/Lymph_Node_Segmentation/results/job.%J.err
+#SBATCH --output=/blue/r.forghani/mdmahfuzalhasan/Lymph_Node_Segmentation/results/job.%J.out
+#SBATCH --error=/blue/r.forghani/mdmahfuzalhasan/Lymph_Node_Segmentation/results/job.%J.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=mdmahfuzalhasan@ufl.edu
 #SBATCH --nodes=1
@@ -19,7 +19,7 @@ module load conda
 conda activate medical
 
 # Navigate to the directory containing the script
-cd /blue/r.forghani/mdmahfuzalhasan/scripts/Lymph_Node_Segmentation
+cd /blue/r.forghani/mdmahfuzalhasan/Lymph_Node_Segmentation
 
 # Execute the Python script
 srun python train.py --fold 0
