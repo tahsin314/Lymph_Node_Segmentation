@@ -14,13 +14,8 @@ for key, value in color_config.items():
     if isinstance(value, str):
         exec(f"{key} = '{value}'")
 
-# for key, value in config_params.items():
-#     if isinstance(value, str):
-#         exec(f"{key} = '{value}'")
-#     else:
-#         exec(f"{key} = {value}")
 
-def train_val_class(args, epoch, dataloader, model, criterion, optimizer, cyclic_scheduler, mixed_precision=False, device_ids=0, train=True):
+def train_val_class(args, epoch, dataloader, model, criterion, optimizer, cyclic_scheduler, mixed_precision=False, device_ids=[0], train=True):
     t1 = time.time()
     running_loss = 0
     epoch_samples = 0
@@ -37,10 +32,10 @@ def train_val_class(args, epoch, dataloader, model, criterion, optimizer, cyclic
     print(f"{BLUE}Initiating {stage} phase ...{RESET}")
     for idx, (data, labels) in enumerate(dataloader):
         with torch.set_grad_enabled(train):
-            # data = data.to(f'cuda:{device_ids[0]}', non_blocking=True).to(dtype=torch.float32)
-            # labels = labels.to(f'cuda:{device_ids[0]}', non_blocking=True).to(dtype=torch.long)
-            data = data.to(device_ids).to(dtype=torch.float32)
-            labels = labels.to(device_ids).to(dtype=torch.long)
+            data = data.to(f'cuda:{device_ids[0]}', non_blocking=True).to(dtype=torch.float32)
+            labels = labels.to(f'cuda:{device_ids[0]}', non_blocking=True).to(dtype=torch.long)
+            # data = data.to(device_ids).to(dtype=torch.float32)
+            # labels = labels.to(device_ids).to(dtype=torch.long)
             epoch_samples += len(data)
 
             with torch.cuda.amp.autocast(mixed_precision):

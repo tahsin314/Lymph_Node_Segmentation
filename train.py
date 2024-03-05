@@ -95,31 +95,8 @@ for attr in vars(args):
 #     else:
 #         exec(f"{key} = {value}")
 
-data_dir = args.data_dir
-model_dir = args.model_dir
-model_name = args.model_name
-n_fold = args.n_fold
-fold = args.fold
-device_id = args.device_id
-sz = args.sz
-num_slices = args.num_slices
-threshold = args.threshold
-dataset = args.dataset
-lr = args.lr
-eps = args.eps
-weight_decay = args.weight_decay
-n_epochs = args.n_epochs
-bs = args.bs
-gradient_accumulation_steps = args.gradient_accumulation_steps
-SEED = args.SEED
-sampling_mode = args.sampling_mode
-pretrained = args.pretrained
-mixed_precision = args.mixed_precision
-resume_path = args.resume_path
-test = args.test
+data_dir, model_dir, model_name, n_fold, fold, device_id, sz, num_slices, threshold, dataset, lr, eps, weight_decay, n_epochs, bs, gradient_accumulation_steps, SEED, sampling_mode, pretrained, mixed_precision, resume_path, test = vars(args).values()
 
-config = vars(args)
-# wandb_config = {k: v for k, v in config.items() if k in wandb.sdk.wandb_sdk.INIT_OPTIONS}
 print(f'################### Fold:{fold} Training Started ############# \n')
 wandb.init(
     project="LN Segmentation",
@@ -153,7 +130,7 @@ print(f'valid:::: pos:{len(valid_pos)} neg:{len(valid_neg)}')
 print(f'test:::: pos:{len(test_pos)} neg:{len(test_neg)}')
 
 # device = 'cuda' if torch.cuda.is_available() else 'cpu'
-train_aug = Augmentation()
+train_aug = Augmentation(args=args)
 train_ds = LNDataset(train_df.path.values, train_df.label.values, dim=sz,
   transforms=train_aug)
 
@@ -163,26 +140,25 @@ valid_ds = LNDataset(valid_df.path.values, valid_df.label.values, dim=sz,
 test_ds = LNDataset(test_df.path.values, test_df.label.values, dim=sz,
   transforms=None)
 sampler = DynamicBalanceClassSampler(labels = train_ds.get_labels(), exp_lambda = 0.95, start_epoch= 5, mode = 'downsampling')
-# data = CloudDataset(base_path=data_dir)
-# train_ds, valid_ds, test_ds = torch.utils.data.random_split(data, (4000, 2400, 2000))
+
 data_module = DataModule(train_ds, valid_ds, test_ds, batch_size=bs, sampler = sampler)
 model = model_params[model_name]
-# turn_on_efficient_conv_bn_eval_for_single_model(model)
+
 total_params = sum(p.numel() for p in model.parameters())
 wandb.log({'# Model Params': total_params})
 flops = FlopCountAnalysis(model, torch.randn(1, 2*num_slices+1, sz, sz))
 wandb.log({'# Model FLOPS': flops.total()})
 # model = model.to(device)
-# device_ids = [device_id]
-# print(f'device_ids:{device_ids}')
-# model = DataParallel(model, device_ids=device_ids)
-# model.to(f'cuda:{device_ids[0]}', non_blocking=True)
+device_ids = [device_id]
+print(f'device_ids:{device_ids}')
+model = DataParallel(model, device_ids=device_ids)
+model.to(f'cuda:{device_ids[0]}', non_blocking=True)
 
 
 ## Load Networks
-device = torch.device("cuda")
-print(f'--- device:{device} ---')
-model.to(device)
+# device = torch.device("cuda")
+# print(f'--- Device ID:{device} ---')
+# model.to(device)
 
 # citerion = BinaryDiceLoss(reduction='mean')
 citerion = FocusNetLoss
@@ -196,7 +172,7 @@ cyclic_scheduler = CosineAnnealingWarmRestarts(optim, 5*len(data_module.train_da
 wandb.watch(models=model, criterion=citerion, log='parameters')
 
 if resume_path:
-    best_state = torch.load(f"{model_dir}/fold_{fold}/{resume_path}", map_location=device)
+    best_state = torch.load(f"{model_dir}/fold_{fold}/{resume_path}")
     print(f"Best Validation result was found in epoch {best_state['epoch']}\n")
     print(f"Best Validation Recall {best_state['best_recall']}\n")
     print(f"Best Validation Dice {best_state['best_dice']}\n")
@@ -205,15 +181,7 @@ if resume_path:
     best_valid_loss = best_state['best_loss']
     best_valid_recall = best_state['best_recall']
     best_valid_dice = best_state['best_dice']
-    # model.load_state_dict(best_state['model'])
-    if list(best_state['model'].keys())[0].startswith('module.'):
-        # Create a new state dict without the "module." prefix
-        new_state_dict = {k.replace('module.', ''): v for k, v in best_state['model'].items()}
-    else:
-        new_state_dict = best_state['model']
- 
-    # Load the adjusted state dict into your model
-    model.load_state_dict(new_state_dict)
+    model.load_state_dict(best_state['model'])
     optim.load_state_dict(best_state['optim'])
     lr_scheduler.load_state_dict(best_state['scheduler'])
     # cyclic_scheduler.load_state_dict(best_state['cyclic_scheduler'])
@@ -233,9 +201,9 @@ if not test:
         print(gc.collect())
     
         train_loss, train_dice_scores, train_recall_scores, cyclic_scheduler = train_val_class(args, epoch, data_module.train_dataloader(), 
-                                                model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device, train=True)
+                                                model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device_ids, train=True)
         valid_loss, val_dice_scores, val_recall_scores, _ = train_val_class(args, epoch, data_module.val_dataloader(), 
-                                                model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device, train=False)
+                                                model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device_ids, train=False)
         # NaN check
         if valid_loss != valid_loss:
             print(f'{RED}Mixed Precision{RESET} rendering nan value. Forcing {RED}Mixed Precision{RESET} to be False ...')
@@ -252,7 +220,8 @@ if not test:
                 del tmp
             except:
                 model = model_params[model_name]
-                model = model.to(device)
+                model = DataParallel(model, device_ids=device_ids)
+                model.to(f'cuda:{device_ids[0]}', non_blocking=True)
         else:
             train_losses.append(train_loss)
             valid_losses.append(valid_loss)
@@ -305,6 +274,6 @@ print(f"{BLUE}Best Validation Recall {best_state['best_recall']}\n{RESET}")
 print(f"{BLUE}Best Validation Dice {best_state['best_dice']}\n{RESET}")
 epoch = 0
 test_loss, test_dice_scores, test_recall_scores, _ = train_val_class(args, epoch, data_module.test_dataloader(), 
-                                            model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device, train=False)
+                                            model, citerion, optim, None, mixed_precision=mixed_precision, device_ids=device_ids, train=False)
 wandb.log({"Test Loss": test_loss, "Test Average DICE": np.mean(test_dice_scores), "Test SD DICE": np.std(test_dice_scores), "Test Average Recall": np.mean(test_recall_scores), "Test SD Recall": np.std(test_recall_scores)})
 wandb.finish()

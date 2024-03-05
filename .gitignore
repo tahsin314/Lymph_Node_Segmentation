@@ -9,3 +9,6 @@ wandb
 data/*
 history_dir/*
 nohup*
+results
+core*
+core.python*

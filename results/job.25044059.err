@@ -1,47 +1,0 @@
-wandb: Currently logged in as: tahsin (vqa_tawsif). Use `wandb login --relogin` to force relogin
-wandb: Tracking run with wandb version 0.16.3
-wandb: Run data is saved locally in /blue/r.forghani/scripts/Lymph_Node_Segmentation/wandb/run-20240304_153842-mdybq012
-wandb: Run `wandb offline` to turn off syncing.
-wandb: Syncing run SNet_fold_0
-wandb: ⭐️ View project at https://wandb.ai/vqa_tawsif/LN%20Segmentation
-wandb: 🚀 View run at https://wandb.ai/vqa_tawsif/LN%20Segmentation/runs/mdybq012
-Unsupported operator aten::add_ encountered 45 time(s)
-Unsupported operator aten::sigmoid encountered 15 time(s)
-Unsupported operator aten::mul encountered 21 time(s)
-Unsupported operator aten::max_pool2d encountered 2 time(s)
-Unsupported operator aten::add encountered 8 time(s)
-Unsupported operator aten::prelu encountered 6 time(s)
-The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
-conv1x.conv2.shortcut, conv2x.1.conv.shortcut, conv4x.1.conv.shortcut, conv4xd2.0.conv.shortcut, conv4xd2.1.conv.shortcut
-wandb: - 0.015 MB of 0.015 MB uploadedwandb: \ 0.015 MB of 0.015 MB uploadedwandb: | 0.015 MB of 0.015 MB uploadedwandb: / 0.015 MB of 0.015 MB uploadedwandb: - 0.020 MB of 0.031 MB uploaded (0.002 MB deduped)wandb: \ 0.031 MB of 0.031 MB uploaded (0.002 MB deduped)wandb: 
-wandb: Run history:
-wandb:  # Model FLOPS ▁
-wandb: # Model Params ▁
-wandb: 
-wandb: Run summary:
-wandb:  # Model FLOPS 47885218048
-wandb: # Model Params 1109693
-wandb: 
-wandb: 🚀 View run SNet_fold_0 at: https://wandb.ai/vqa_tawsif/LN%20Segmentation/runs/mdybq012
-wandb: ️⚡ View job at https://wandb.ai/vqa_tawsif/LN%20Segmentation/jobs/QXJ0aWZhY3RDb2xsZWN0aW9uOjE0NDkzMDYxOA==/version_details/v11
-wandb: Synced 6 W&B file(s), 0 media file(s), 2 artifact file(s) and 0 other file(s)
-wandb: Find logs at: ./wandb/run-20240304_153842-mdybq012/logs
-Traceback (most recent call last):
-  File "train.py", line 199, in <module>
-    best_state = torch.load(f"{model_dir}/fold_{fold}/{resume_path}")
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/torch/serialization.py", line 1014, in load
-    return _load(opened_zipfile,
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/torch/serialization.py", line 1422, in _load
-    result = unpickler.load()
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/torch/serialization.py", line 1392, in persistent_load
-    typed_storage = load_tensor(dtype, nbytes, key, _maybe_decode_ascii(location))
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/torch/serialization.py", line 1366, in load_tensor
-    wrap_storage=restore_location(storage, location),
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/torch/serialization.py", line 381, in default_restore_location
-    result = fn(storage, location)
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/torch/serialization.py", line 274, in _cuda_deserialize
-    device = validate_cuda_device(location)
-  File "/blue/r.forghani/envs/medical/lib/python3.8/site-packages/torch/serialization.py", line 265, in validate_cuda_device
-    raise RuntimeError('Attempting to deserialize object on CUDA device '
-RuntimeError: Attempting to deserialize object on CUDA device 1 but torch.cuda.device_count() is 1. Please use torch.load with map_location to map your storages to an existing device.
-srun: error: c1010a-s35: task 0: Exited with exit code 1

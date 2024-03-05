@@ -20,8 +20,9 @@ import config as cfg
 
 class Augmentation():
 
-    def __init__(self):
+    def __init__(self, args):
         super(Augmentation, self).__init__()
+        self.sz = args.sz
         self.transform_structure = self._get_geometric_transformation()
         self.transform_pixel = self._get_pixel_level_transformation()
 
@@ -29,7 +30,7 @@ class Augmentation():
         rotation_limit = random.randint(5,10)
         transform = A.Compose(
             [
-                A.CenterCrop (height = 384, width = 384, p=1.0),
+                A.CenterCrop (height = self.sz, width = self.sz, p=1.0),
                 A.Rotate(limit=rotation_limit, p=0.5),
                 A.VerticalFlip(p=0.5),              
                 A.RandomRotate90(p=0.5),
