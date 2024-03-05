@@ -142,11 +142,11 @@ valid_ds = LNDataset(valid_df.path.values, valid_df.label.values, dim=sz,
 test_ds = LNDataset(test_df.path.values, test_df.label.values, dim=sz,
   transforms=None)
 
-class_counts = df['label'].value_counts().sort_index()
+class_counts = train_df['label'].value_counts().sort_index()
 total_samples = float(class_counts.sum())
 class_weights = [total_samples / count for count in class_counts]
 # Create weighted sampler
-labels = df['label'].tolist()
+labels = train_df['label'].tolist()
 weights = [class_weights[label] for label in labels]
 weighted_sampler = WeightedRandomSampler(weights, len(weights))
 sampler = DynamicBalanceClassSampler(labels = train_ds.get_labels(), exp_lambda = 0.95, start_epoch= 5, mode = 'downsampling')
