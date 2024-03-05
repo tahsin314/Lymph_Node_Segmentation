@@ -38,7 +38,7 @@ parser = argparse.ArgumentParser(description='Lymph Node Segmentation Training')
 parser = argparse.ArgumentParser(description="Configuration parameters for the training script.")
 
 # Define arguments with descriptions, types, and default values
-parser.add_argument("--data_dir", type=str, default="../../data/lymph_node/ct_221_0_npz",
+parser.add_argument("--data_dir", type=str, default="../../../data/lymph_node/ct_221_0_npz",
                     help="Path to the directory containing the training data.")
 parser.add_argument("--model_dir", type=str, default="model_dir_Weighted_Sam",
                     help="Directory to save the trained model.")
