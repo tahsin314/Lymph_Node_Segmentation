@@ -11,8 +11,6 @@
 #SBATCH --partition=hpg-ai
 #SBATCH --gpus=a100:1
 #SBATCH --time=15:00:00
-#SBATCH --account=r.forghani
-#SBATCH --qos=r.forghani
 
 module purge
 module load conda

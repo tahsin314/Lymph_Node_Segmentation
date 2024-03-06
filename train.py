@@ -82,7 +82,7 @@ parser.add_argument("--resume_path", type=str, default=None,
                     help="Mode of data sampling (e.g., 'upsampling').")
 parser.add_argument("--test", action="store_true", default=False,
                     help="Enable using a pre-trained model.")
-parser.add_argument("--num_workers", type=int, default=8,
+parser.add_argument("--num_workers", type=int, default=2,
                     help="Number of workers for dataloader")
 args = parser.parse_args()
 
