@@ -20,4 +20,4 @@ conda activate medical
 cd /blue/r.forghani/mdmahfuzalhasan/Lymph_Node_Segmentation
 
 # Execute the Python script
-srun python train.py --fold 3
+srun python train.py --fold 4
