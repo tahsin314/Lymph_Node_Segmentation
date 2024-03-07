@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=40gb
+#SBATCH --mem=64gb
 #SBATCH --partition=hpg-ai
 #SBATCH --gpus=a100:1
 #SBATCH --time=15:00:00
