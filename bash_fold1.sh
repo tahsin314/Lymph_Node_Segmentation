@@ -6,7 +6,7 @@
 #SBATCH --mail-user=mdmahfuzalhasan@ufl.edu
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
+#SBATCH --cpus-per-task=4
 #SBATCH --mem=64gb
 #SBATCH --partition=hpg-ai
 #SBATCH --gpus=a100:1
