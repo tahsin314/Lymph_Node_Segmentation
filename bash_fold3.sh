@@ -14,7 +14,7 @@
 
 module purge
 module load conda
-conda activate medical
+conda activate node
 
 # Navigate to the directory containing the script
 cd /blue/r.forghani/mdmahfuzalhasan/Lymph_Node_Segmentation
