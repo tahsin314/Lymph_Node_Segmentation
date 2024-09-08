@@ -1,5 +1,9 @@
 # Lymph Node Segmentation
 
+## Update: 
+Our research paper **Automated Segmentation of Lymph Nodes on Neck CT Scans Using Deep Learning** is accepted at the *Journal of Imaging Informatics in Medicine*. Congratulations to everyone who worked hard for this project. The paper is available [here](https://link.springer.com/article/10.1007/s10278-024-01114-w)
+
+## Introduction
 Detecting lymph nodes (LN) plays a vital role in enhancing the accuracy of cancer diagnosis and treatment procedures. However, the inherent challenges in this process arise from the low-contrast features in CT scan images, coupled with the diverse shapes, sizes, and orientations of the nodes, along with their sparse distribution. These factors make the detection step particularly difficult and contribute to a high number of false positives.
 
 Manual examination of CT scan slices can be time-consuming, and the occurrence of false positives may distract clinicians from essential tasks. Our objective is to streamline the LN detection process by leveraging Deep Learning-based segmentation. This repository houses a collection of cutting-edge segmentation models and loss functions specifically designed for LN detection. It's important to note that this project is an ongoing effort, and we anticipate continuously adding more resources. Our ultimate aim is to introduce innovative solutions that address the challenges associated with LN detection, enhancing the efficiency and accuracy of the entire process.
@@ -15,7 +19,7 @@ Manual examination of CT scan slices can be time-consuming, and the occurrence o
 - Run `train.py`. It will train a classification model on the extracted data. You can choose several models and loss functions to use for training for the `config.py` file. A description of the models and loss functions are added below.
 
 ## Models
-
+   
 This section describes the integrated models in this pipeline:
 
 - **`UNet`** : The **U-Net** architecture is a convolutional neural network (CNN) designed for semantic segmentation tasks, particularly in medical image analysis. Its distinctive U-shaped structure consists of a contracting path to capture context and a symmetric expansive path for precise localization. This enables the network to effectively identify and delineate structures in images, making it especially suited for tasks such as organ and tumor segmentation. The U-Net's success lies in its ability to preserve spatial information through skip connections, facilitating accurate pixel-wise predictions while maintaining computational efficiency.
