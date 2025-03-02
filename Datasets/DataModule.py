@@ -47,8 +47,7 @@ class DataModule():
 
     def val_dataloader(self):
         val_loader = DataLoader(self.valid_ds,batch_size=self.batch_size, drop_last=True,
-        shuffle=True,
-         num_workers=self.num_workers, pin_memory=True)
+        shuffle=True, num_workers=self.num_workers, pin_memory=True)
         return val_loader
 
     def test_dataloader(self):
